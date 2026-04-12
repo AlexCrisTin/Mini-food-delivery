@@ -127,7 +127,7 @@ CREATE TABLE orders (
     payment_method      VARCHAR(50) NOT NULL DEFAULT 'COD',
     status              VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     
-    note                TEXT,
+    note                VARCHAR(500),
     
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
