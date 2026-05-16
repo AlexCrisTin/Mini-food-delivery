@@ -14,5 +14,5 @@ public interface OrderService {
 
     OrderTrackingResponse getOrderTracking(Long orderId, Long requesterId);
 
-    List<OrderSummaryResponse> getRestaurantOrders(Long restaurantId, String status);
+    List<OrderSummaryResponse> getRestaurantOrders(Long restaurantId, String status, Long requesterId, String requesterRole);
 }

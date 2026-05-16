@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface DeliveryService {
     void createUnassignedAssignment(Long orderId);
-    DeliveryAssignmentResponse assignShipper(AssignShipperRequest request);
+    DeliveryAssignmentResponse assignShipper(Long requesterId, String requesterRole, AssignShipperRequest request);
     void markPickedUp(Long shipperId, Long orderId, MarkPickupRequest request);
     void markDelivered(Long shipperId, Long orderId, MarkDeliveredRequest request);
     void updateLocation(Long shipperId, ShipperLocationUpdateRequest request);

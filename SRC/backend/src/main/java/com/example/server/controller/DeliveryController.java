@@ -21,8 +21,9 @@ public class DeliveryController {
 
     @PostMapping("/assign")
     @PreAuthorize("hasAnyRole('ADMIN', 'SHIPPER')")
-    public ResponseEntity<DeliveryAssignmentResponse> assignShipper(@Valid @RequestBody AssignShipperRequest request) {
-        return ResponseEntity.ok(deliveryService.assignShipper(request));
+    public ResponseEntity<DeliveryAssignmentResponse> assignShipper(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                     @Valid @RequestBody AssignShipperRequest request) {
+        return ResponseEntity.ok(deliveryService.assignShipper(userDetails.getId(), userDetails.getRole(), request));
     }
 
     @PatchMapping("/{orderId}/pickup")
