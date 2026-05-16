@@ -25,7 +25,7 @@ describe('BrowseView – Danh sách nhà hàng', () => {
       body: mockRestaurants,
     }).as('getRestaurants')
 
-    cy.visit('/browse')
+    cy.loginAsCustomer({ url: '/browse' })
     cy.wait('@getRestaurants')
   })
 
@@ -94,7 +94,7 @@ describe('RestaurantDetail – Chi tiết nhà hàng & menu', () => {
       body: mockMenuItems,
     }).as('getMenu')
 
-    cy.visit('/restaurant/1')
+    cy.loginAsCustomer({ url: '/restaurants/1', waitProfile: false })
     cy.wait('@getRestaurant')
     cy.wait('@getMenu')
   })
@@ -153,7 +153,7 @@ describe('Luồng: Browse → Restaurant Detail → Giỏ hàng', () => {
     cy.intercept('GET', '**/restaurants/1', { statusCode: 200, body: mockRestaurants[0] }).as('detail')
     cy.intercept('GET', '**/restaurants/1/menu**', { statusCode: 200, body: mockMenuItems }).as('menu')
 
-    cy.visit('/browse')
+    cy.loginAsCustomer({ url: '/browse' })
     cy.wait('@list')
 
     // Click vào nhà hàng
@@ -164,7 +164,20 @@ describe('Luồng: Browse → Restaurant Detail → Giỏ hàng', () => {
     // Thêm món
     cy.get('button[class*="add"], button[class*="cart"]').first().click()
 
-    // Đi vào giỏ hàng
+  cy.seedCustomerCart([
+      {
+        lineId: '101::vua::',
+        id: 101,
+        name: 'Bún bò Huế',
+        price: 45000,
+        quantity: 1,
+        restaurantId: 1,
+        restaurantName: 'Quán Huế',
+        size: 'Vừa',
+        note: '',
+        imageUrl: null,
+      },
+    ])
     cy.visit('/cart')
     cy.contains('Bún bò Huế').should('be.visible')
   })
