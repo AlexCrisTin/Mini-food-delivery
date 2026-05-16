@@ -90,8 +90,9 @@ describe('Trang chủ – Điều hướng', () => {
     cy.url().should('match', /\/$|\/home/)
   })
 
-  it('link "Thực đơn" hoặc "Browse" điều hướng đúng', () => {
-    cy.get('.hero-links a, nav a').contains(/thực đơn|browse|món ăn/i).click()
-    cy.url().should('include', '/browse')
+  it('nút "Bắt đầu ngay" mở modal đăng nhập', () => {
+    cy.contains('button', 'Bắt đầu ngay').click()
+    cy.get('input[type="email"]').should('be.visible')
+    cy.get('input[type="password"]').should('be.visible')
   })
 })
