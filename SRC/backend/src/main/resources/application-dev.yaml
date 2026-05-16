@@ -13,6 +13,7 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
   flyway:
     clean-disabled: false
+    repair-on-migrate: true
 
 app:
   jwt:

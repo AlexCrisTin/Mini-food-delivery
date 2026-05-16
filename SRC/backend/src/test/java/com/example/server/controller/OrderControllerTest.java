@@ -78,7 +78,11 @@ class OrderControllerTest {
     void shouldCreateOrderSuccessfully() throws Exception {
         CreateOrderRequest request = new CreateOrderRequest();
         request.setRestaurantId(1L);
-        // ... set other fields
+        request.setDeliveryAddress("123 Test St");
+        request.setDeliveryLat(new java.math.BigDecimal("10.0"));
+        request.setDeliveryLng(new java.math.BigDecimal("106.0"));
+        request.setPaymentMethod("COD");
+        request.setItems(java.util.List.of(new com.example.server.dto.order.CreateOrderItemRequest(1L, 2, "No onion")));
 
         when(orderService.createOrder(eq(1L), any())).thenReturn(new OrderSummaryResponse());
 

@@ -9,14 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JwtResponse {
+public class TokenRefreshResponse {
     private String accessToken;
     private String refreshToken;
-    private String tokenType;
-    private Long expiresIn;
-    private Long userId;
-    private String email;
-    private String fullName;
-    private String role;
-    private Boolean active;
+    @Builder.Default
+    private String tokenType = "Bearer";
 }

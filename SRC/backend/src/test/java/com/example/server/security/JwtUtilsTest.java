@@ -1,18 +1,25 @@
 package com.example.server.security;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class JwtUtilsTest {
 
-    @Autowired
+    @InjectMocks
     private JwtUtils jwtUtils;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "ThisIsAVeryLongAndVerySecretJWTkeyForConChoCaoBangBoPeCe");
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 86400000L);
+    }
 
     @Test
     void shouldGenerateAndValidateToken() {

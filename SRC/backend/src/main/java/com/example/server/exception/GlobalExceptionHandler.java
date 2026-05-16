@@ -1,6 +1,7 @@
 package com.example.server.exception;
 
 import com.example.server.dto.common.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
+        ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
@@ -59,7 +61,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex) {
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
                 .message("Access denied: " + ex.getMessage())
@@ -70,18 +73,35 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
-    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockingFailure(org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockingFailure(
+            org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
-                .message("The data you are trying to update has been modified by another user. Please refresh and try again.")
+                .message(
+                        "The data you are trying to update has been modified by another user. Please refresh and try again.")
                 .timestamp(LocalDateTime.now())
                 .errorCode("CONCURRENCY_FAILURE")
                 .build();
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        log.error("Data integrity violation: {}", ex.getMessage());
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(
+                        "Database constraint violation. This often happens if the schema is out of sync or required fields are missing.")
+                .timestamp(LocalDateTime.now())
+                .errorCode("DATABASE_ERROR")
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGlobalException(Exception ex) {
+        log.error("Unexpected error: ", ex);
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
                 .message("An unexpected error occurred: " + ex.getMessage())

@@ -2,12 +2,14 @@ package com.example.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-class ServerApplicationTests {
+@ActiveProfiles("test")
+class ServerApplicationTests extends BaseIntegrationTest {
 
 	@Test
-	void contextLoads() {
+	void shouldLoadContext() {
 	}
 
 }

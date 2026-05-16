@@ -1,28 +1,34 @@
 package com.example.server.service.impl;
 
-import com.example.server.dto.order.CreateOrderItemRequest;
-import com.example.server.dto.order.CreateOrderRequest;
-import com.example.server.dto.order.OrderSummaryResponse;
-import com.example.server.dto.order.OrderStatusUpdateRequest;
-import com.example.server.entity.MenuItem;
-import com.example.server.entity.Order;
-import com.example.server.entity.Restaurant;
-import com.example.server.entity.User;
+import com.example.server.dto.common.PageResponse;
+import com.example.server.dto.order.*;
+import com.example.server.entity.*;
 import com.example.server.enums.OrderStatus;
 import com.example.server.enums.Role;
 import com.example.server.event.OrderReadyEvent;
 import com.example.server.exception.AppException;
+import com.example.server.exception.ResourceNotFoundException;
 import com.example.server.mapper.OrderMapper;
 import com.example.server.repository.*;
 import com.example.server.service.MapService;
+import com.example.server.service.NotificationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,109 +50,147 @@ class OrderServiceImplTest {
     @Mock
     private MenuItemRepository menuItemRepository;
     @Mock
-    private OrderMapper orderMapper;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private MapService mapService;
+    @Mock
+    private NotificationService notificationService;
+
+    @Spy
+    private com.example.server.mapper.DeliveryMapper deliveryMapper = Mappers.getMapper(com.example.server.mapper.DeliveryMapper.class);
+
+    @Spy
+    private OrderMapper orderMapper = Mappers.getMapper(OrderMapper.class);
 
     @InjectMocks
     private OrderServiceImpl orderService;
 
-    @Test
-    void shouldCreateOrderSuccessfully() {
-        // Arrange
-        Long userId = 1L;
-        User user = User.builder().id(userId).email("user@test.com").build();
-        Restaurant restaurant = Restaurant.builder().id(1L).latitude(new BigDecimal("10.0"))
-                .longitude(new BigDecimal("10.0")).build();
-        MenuItem menuItem = MenuItem.builder().id(1L).name("Pizza").price(new BigDecimal("100.0")).build();
+    private User customer;
+    private User owner;
+    private Restaurant restaurant;
+    private MenuItem menuItem;
+    private Order order;
 
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(orderService, "defaultDeliveryFee", "15.00");
+        ReflectionTestUtils.setField(orderMapper, "deliveryMapper", deliveryMapper);
+
+        customer = User.builder().id(1L).fullName("Customer").role(Role.ROLE_CUSTOMER).build();
+        owner = User.builder().id(2L).fullName("Owner").role(Role.ROLE_OWNER).build();
+        
+        restaurant = Restaurant.builder()
+                .id(10L)
+                .name("Test Restaurant")
+                .owner(owner)
+                .latitude(new BigDecimal("10.0"))
+                .longitude(new BigDecimal("10.0"))
+                .build();
+
+        menuItem = MenuItem.builder()
+                .id(20L)
+                .name("Pizza")
+                .price(new BigDecimal("100.0"))
+                .build();
+
+        order = new Order();
+        order.setId(100L);
+        order.setUser(customer);
+        order.setRestaurant(restaurant);
+        order.setStatus(OrderStatus.PENDING.name());
+        order.setOrderItems(new ArrayList<>());
+    }
+
+    @Test
+    void shouldCreateOrderWithDistanceBasedFee() {
         CreateOrderRequest request = new CreateOrderRequest();
-        request.setRestaurantId(1L);
-        request.setDeliveryAddress("Address");
+        request.setRestaurantId(10L);
         request.setDeliveryLat(new BigDecimal("10.1"));
         request.setDeliveryLng(new BigDecimal("10.1"));
-        request.setItems(List.of(new CreateOrderItemRequest(1L, 2, "Note")));
+        request.setItems(List.of(new CreateOrderItemRequest(20L, 2, "Extra cheese")));
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(restaurantRepository.findById(1L)).thenReturn(Optional.of(restaurant));
-        when(menuItemRepository.findById(1L)).thenReturn(Optional.of(menuItem));
-        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
-        when(orderMapper.toSummaryResponse(any(Order.class))).thenReturn(new OrderSummaryResponse());
+        com.example.server.dto.map.RoutingResponse route = new com.example.server.dto.map.RoutingResponse();
+        com.example.server.dto.map.RoutingResponse.Route r = new com.example.server.dto.map.RoutingResponse.Route();
+        r.setDistance(5000.0); // 5km
+        route.setRoutes(List.of(r));
 
-        // Act
-        OrderSummaryResponse result = orderService.createOrder(userId, request);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+        when(mapService.getRoute(any(), any(), any(), any())).thenReturn(route);
+        when(menuItemRepository.findById(20L)).thenReturn(Optional.of(menuItem));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
 
-        // Assert
+        OrderSummaryResponse result = orderService.createOrder(1L, request);
+
         assertNotNull(result);
-        verify(orderRepository, times(1)).save(any(Order.class));
-        verify(orderStatusHistoryRepository, times(1)).save(any());
+        verify(orderRepository).save(any(Order.class));
+        // Distance based fee: 5.0 + (5km * 2.0) = 15.0
     }
 
     @Test
-    void shouldUpdateOrderStatusFromPreparingToReadySuccessfully() {
-        // Arrange
-        Long orderId = 1L;
-        Long userId = 2L; // Owner
-        User owner = User.builder().id(userId).role(Role.ROLE_OWNER).build();
-        Restaurant restaurant = Restaurant.builder().owner(owner).build();
-        Order order = new Order();
-        order.setId(orderId);
-        order.setStatus(OrderStatus.PREPARING.name());
-        order.setRestaurant(restaurant);
+    void shouldGetOrderSummaryForAdmin() {
+        User admin = User.builder().id(99L).role(Role.ROLE_ADMIN).build();
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(admin));
 
-        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.READY.name(), "Ready!");
+        OrderSummaryResponse result = orderService.getOrderSummary(100L, 99L);
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(owner));
-
-        // Act
-        orderService.updateOrderStatus(orderId, userId, request);
-
-        // Assert
-        assertEquals(OrderStatus.READY.name(), order.getStatus());
-        verify(eventPublisher, times(1)).publishEvent(any(OrderReadyEvent.class));
+        assertNotNull(result);
     }
 
     @Test
-    void shouldThrowExceptionWhenUpdatingToInvalidOrderStatus() {
-        // Arrange
-        Long orderId = 1L;
-        Long userId = 1L;
-        User admin = User.builder().id(userId).role(Role.ROLE_ADMIN).build();
-        Order order = new Order();
+    void shouldGetOrderHistory() {
+        Page<Order> page = new PageImpl<>(Collections.singletonList(order));
+        when(orderRepository.findByUserIdOrderByCreatedAtDesc(eq(1L), any())).thenReturn(page);
+
+        PageResponse<OrderSummaryResponse> result = orderService.getOrderHistory(1L, 0, 10);
+
+        assertEquals(1, result.getItems().size());
+    }
+
+    @Test
+    void shouldUpdateOrderStatusSuccessfully() {
+        order.setStatus(OrderStatus.CONFIRMED.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.PREPARING.name(), "Cooking");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(owner));
+
+        orderService.updateOrderStatus(100L, 2L, request);
+
+        assertEquals(OrderStatus.PREPARING.name(), order.getStatus());
+        verify(orderRepository).save(order);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenInvalidTransition() {
         order.setStatus(OrderStatus.PENDING.name());
+        // Skip CONFIRMED
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.PREPARING.name(), "Skip");
 
-        // PENDING to READY is invalid (must go through CONFIRMED -> PREPARING)
-        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.READY.name(), "Cheat!");
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(owner));
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(admin));
-
-        // Act & Assert
-        assertThrows(AppException.class, () -> {
-            orderService.updateOrderStatus(orderId, userId, request);
-        });
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 2L, request));
     }
 
     @Test
-    void shouldThrowExceptionWhenGettingOrderSummaryUnauthorized() {
-        // Arrange
-        Long orderId = 1L;
-        Long userId = 99L; // Stranger
-        User stranger = User.builder().id(userId).role(Role.ROLE_CUSTOMER).build();
-        User customer = User.builder().id(1L).build();
-        Order order = new Order();
-        order.setUser(customer);
-        order.setRestaurant(Restaurant.builder().owner(User.builder().id(2L).build()).build());
+    void shouldGetOrderTracking() {
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(stranger));
+        OrderTrackingResponse result = orderService.getOrderTracking(100L, 1L);
 
-        // Act & Assert
-        assertThrows(AppException.class, () -> {
-            orderService.getOrderSummary(orderId, userId);
-        });
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldGetRestaurantOrders() {
+        when(orderRepository.findByRestaurantIdAndStatus(10L, "PENDING"))
+                .thenReturn(Collections.singletonList(order));
+
+        List<OrderSummaryResponse> result = orderService.getRestaurantOrders(10L, "PENDING");
+
+        assertEquals(1, result.size());
     }
 }

@@ -42,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final com.example.server.service.MapService mapService;
+    private final com.example.server.service.NotificationService notificationService;
 
     @Override
     public OrderSummaryResponse createOrder(Long userId, CreateOrderRequest request) {
@@ -54,7 +55,16 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal deliveryFee = calculateDeliveryFee(restaurant, request.getDeliveryLat(), request.getDeliveryLng());
 
         // 2. Persist order (INSIDE TRANSACTION)
-        return persistOrder(user, restaurant, deliveryFee, request);
+        OrderSummaryResponse response = persistOrder(user, restaurant, deliveryFee, request);
+
+        // 3. Notify Restaurant Owner
+        notificationService.createNotification(
+                restaurant.getOwner().getId(),
+                "New Order Received",
+                "You have a new order #" + response.getId() + " from " + user.getFullName(),
+                "NEW_ORDER");
+
+        return response;
     }
 
     private BigDecimal calculateDeliveryFee(Restaurant restaurant, BigDecimal deliveryLat, BigDecimal deliveryLng) {
@@ -62,8 +72,7 @@ public class OrderServiceImpl implements OrderService {
         try {
             com.example.server.dto.map.RoutingResponse route = mapService.getRoute(
                     restaurant.getLatitude(), restaurant.getLongitude(),
-                    deliveryLat, deliveryLng
-            );
+                    deliveryLat, deliveryLng);
             if (route != null && !route.getRoutes().isEmpty()) {
                 double distanceKm = route.getRoutes().get(0).getDistance() / 1000.0;
                 // Example: 5.00 base + 2.00 per km
@@ -77,7 +86,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Transactional
-    public OrderSummaryResponse persistOrder(User user, Restaurant restaurant, BigDecimal deliveryFee, CreateOrderRequest request) {
+    public OrderSummaryResponse persistOrder(User user, Restaurant restaurant, BigDecimal deliveryFee,
+            CreateOrderRequest request) {
         Order order = new Order();
         order.setUser(user);
         order.setRestaurant(restaurant);
@@ -125,16 +135,16 @@ public class OrderServiceImpl implements OrderService {
     public OrderSummaryResponse getOrderSummary(Long id, Long requesterId) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_NAME, "id", id));
-        
+
         validateOrderOwnership(order, requesterId);
-        
+
         return orderMapper.toSummaryResponse(order);
     }
 
     private void validateOrderOwnership(Order order, Long requesterId) {
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", requesterId));
-        
+
         // Admin can see everything
         if (com.example.server.enums.Role.ROLE_ADMIN.equals(requester.getRole())) {
             return;
@@ -151,13 +161,14 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Shipper can see orders assigned to them
-        if (order.getDeliveryAssignment() != null && 
-            order.getDeliveryAssignment().getShipper() != null && 
-            order.getDeliveryAssignment().getShipper().getId().equals(requesterId)) {
+        if (order.getDeliveryAssignment() != null &&
+                order.getDeliveryAssignment().getShipper() != null &&
+                order.getDeliveryAssignment().getShipper().getId().equals(requesterId)) {
             return;
         }
 
-        throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to access this order", "UNAUTHORIZED_ACCESS");
+        throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to access this order",
+                "UNAUTHORIZED_ACCESS");
     }
 
     @Override
@@ -198,20 +209,28 @@ public class OrderServiceImpl implements OrderService {
 
         addStatusHistory(order, user, newStatus, request.getNote());
 
+        // Notify Customer of status change
+        notificationService.createNotification(
+                order.getUser().getId(),
+                "Order Status Updated",
+                "Your order #" + order.getId() + " is now " + newStatus,
+                "ORDER_STATUS_UPDATE"
+        );
+
         // Publish event if ready for delivery
         if (OrderStatus.READY.name().equals(newStatus)) {
             eventPublisher.publishEvent(new OrderReadyEvent(this, order.getId()));
         }
     }
 
-    private void validateStatusUpdatePermission(Order order, User user, String newStatus) {
+    private void validateStatusUpdatePermission(Order order, User user, String statusStr) {
         String role = user.getRole();
-        
+
         if (com.example.server.enums.Role.ROLE_ADMIN.equals(role)) {
             return;
         }
 
-        OrderStatus status = OrderStatus.valueOf(newStatus);
+        OrderStatus status = parseStatus(statusStr);
 
         if (status == OrderStatus.CANCELLED) {
             // Only customer who placed the order or admin can cancel (usually)
@@ -220,7 +239,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        if (status == OrderStatus.CONFIRMED || status == OrderStatus.PREPARING || status == OrderStatus.READY || status == OrderStatus.REJECTED) {
+        if (status == OrderStatus.CONFIRMED || status == OrderStatus.PREPARING || status == OrderStatus.READY
+                || status == OrderStatus.REJECTED) {
             // Only restaurant owner can update to these statuses
             if (order.getRestaurant().getOwner().getId().equals(user.getId())) {
                 return;
@@ -229,19 +249,20 @@ public class OrderServiceImpl implements OrderService {
 
         if (status == OrderStatus.SHIPPING || status == OrderStatus.DELIVERED) {
             // Only assigned shipper can update to these statuses
-            if (order.getDeliveryAssignment() != null && 
-                order.getDeliveryAssignment().getShipper() != null && 
-                order.getDeliveryAssignment().getShipper().getId().equals(user.getId())) {
+            if (order.getDeliveryAssignment() != null &&
+                    order.getDeliveryAssignment().getShipper() != null &&
+                    order.getDeliveryAssignment().getShipper().getId().equals(user.getId())) {
                 return;
             }
         }
 
-        throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to update this order status", "UNAUTHORIZED_ACCESS");
+        throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to update this order status",
+                "UNAUTHORIZED_ACCESS");
     }
 
     private void validateStateTransition(String oldStatus, String newStatus) {
-        OrderStatus current = OrderStatus.valueOf(oldStatus);
-        OrderStatus next = OrderStatus.valueOf(newStatus);
+        OrderStatus current = parseStatus(oldStatus);
+        OrderStatus next = parseStatus(newStatus);
 
         if (next == OrderStatus.CANCELLED || next == OrderStatus.REJECTED) {
             if (current == OrderStatus.SHIPPING || current == OrderStatus.DELIVERED) {
@@ -266,13 +287,24 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    private OrderStatus parseStatus(String statusStr) {
+        if (statusStr == null) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Order status cannot be null", "INVALID_STATUS");
+        }
+        try {
+            return OrderStatus.valueOf(statusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Invalid order status: " + statusStr, "INVALID_STATUS");
+        }
+    }
+
     @Override
     public OrderTrackingResponse getOrderTracking(Long orderId, Long requesterId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_NAME, "id", orderId));
-        
+
         validateOrderOwnership(order, requesterId);
-        
+
         return orderMapper.toTrackingResponse(order);
     }
 

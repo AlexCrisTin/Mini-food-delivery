@@ -1,6 +1,7 @@
 package com.example.server.service.impl;
 
 import com.example.server.dto.report.AdminReportSummaryResponse;
+import com.example.server.dto.report.RestaurantRevenueResponse;
 import com.example.server.repository.OrderRepository;
 import com.example.server.repository.RestaurantRepository;
 import com.example.server.repository.UserRepository;
@@ -11,8 +12,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -69,5 +73,35 @@ class ReportServiceImplTest {
         AdminReportSummaryResponse result = reportService.getAdminReport(start, end);
 
         assertEquals(BigDecimal.ZERO, result.getTotalRevenue());
+    }
+
+    @Test
+    void shouldGetRestaurantRevenueSuccessfully() {
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now();
+        Object[] row = {1L, "Restaurant A", 5L, new BigDecimal("500.00")};
+        when(orderRepository.findRestaurantRevenue(any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.singletonList(row));
+
+        List<RestaurantRevenueResponse> result = reportService.getRestaurantRevenue(start, end);
+
+        assertEquals(1, result.size());
+        assertEquals("Restaurant A", result.get(0).getRestaurantName());
+        assertEquals(new BigDecimal("500.00"), result.get(0).getTotalRevenue());
+    }
+
+    @Test
+    void shouldGenerateRevenueCsvSuccessfully() {
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now();
+        Object[] row = {1L, "Restaurant \"A\"", 5L, new BigDecimal("500.00")};
+        when(orderRepository.findRestaurantRevenue(any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.singletonList(row));
+
+        byte[] csvBytes = reportService.generateRevenueCsv(start, end);
+        String csv = new String(csvBytes, StandardCharsets.UTF_8);
+
+        assertTrue(csv.contains("Restaurant ID,Restaurant Name,Order Count,Total Revenue"));
+        assertTrue(csv.contains("1,\"Restaurant \"\"A\"\"\",5,500.00"));
     }
 }

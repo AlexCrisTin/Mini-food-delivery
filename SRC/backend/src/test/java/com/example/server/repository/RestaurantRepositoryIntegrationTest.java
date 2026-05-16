@@ -31,25 +31,26 @@ class RestaurantRepositoryIntegrationTest extends BaseIntegrationTest {
                                 .name("Pizza")
                                 .iconUrl("pizza.jpg")
                                 .build());
-                User owner = userRepository.save(
-                                User.builder().email("owner@test.com").password("pass").role("ROLE_OWNER").build());
+                User owner = userRepository.save(User.builder().email("owner@test.com").password("pass").fullName("Owner One").role("ROLE_OWNER").build());
 
                 Restaurant r1 = Restaurant.builder()
-                                .name("Pizza Hut")
-                                .category(category)
-                                .owner(owner)
-                                .isApproved(true)
-                                .isDeleted(false)
-                                .address("Address 1")
-                                .build();
+                        .name("Pizza Hut")
+                        .category(category)
+                        .owner(owner)
+                        .isApproved(true)
+                        .isDeleted(false)
+                        .address("Address 1")
+                        .build();
                 Restaurant r2 = Restaurant.builder()
-                                .name("Burger King")
-                                .isApproved(true)
-                                .isDeleted(false)
-                                .address("Address 2")
-                                .build();
+                        .name("Burger King")
+                        .isApproved(true)
+                        .isDeleted(false)
+                        .address("Address 2")
+                        .owner(owner)
+                        .build();
                 restaurantRepository.save(r1);
                 restaurantRepository.save(r2);
+
 
                 // Act
                 Page<Restaurant> result = restaurantRepository.searchRestaurants("Pizza", category.getId(),
@@ -64,11 +65,11 @@ class RestaurantRepositoryIntegrationTest extends BaseIntegrationTest {
         void shouldFindRestaurantByIdWithEntityGraph() {
                 // Arrange
                 RestaurantCategory category = categoryRepository.save(RestaurantCategory.builder()
-                                .name("Fast Food")
+                                .name("Chinese")
                                 .iconUrl("ff.jpg")
                                 .build());
                 User owner = userRepository.save(
-                                User.builder().email("owner2@test.com").password("pass").role("ROLE_OWNER").build());
+                                User.builder().email("owner2@test.com").password("pass").fullName("Owner Two").role("ROLE_OWNER").build());
                 Restaurant restaurant = restaurantRepository.save(Restaurant.builder()
                                 .name("KFC")
                                 .category(category)
@@ -93,7 +94,7 @@ class RestaurantRepositoryIntegrationTest extends BaseIntegrationTest {
                                 .isApproved(false)
                                 .address("New Address")
                                 .owner(userRepository.save(User.builder().email("owner3@test.com").password("pass")
-                                                .role("ROLE_OWNER").build()))
+                                                .fullName("Owner Three").role("ROLE_OWNER").build()))
                                 .build());
 
                 // Act

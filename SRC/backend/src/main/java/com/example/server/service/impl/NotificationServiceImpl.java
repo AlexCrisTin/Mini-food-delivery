@@ -12,7 +12,9 @@ import com.example.server.repository.NotificationRepository;
 import com.example.server.repository.UserRepository;
 import com.example.server.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     private static final String RESOURCE_NOTIFICATION = "Notification";
@@ -29,6 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public List<NotificationResponse> getUserNotifications(Long userId) {
@@ -74,6 +78,19 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setType(type);
         notification.setIsRead(false);
         
-        notificationRepository.save(notification);
+        Notification savedNotification = notificationRepository.save(notification);
+        
+        // Broadcast to user via WebSocket
+        try {
+            NotificationResponse response = notificationMapper.toResponse(savedNotification);
+            log.info("Broadcasting notification to user {}: {}", user.getEmail(), title);
+            messagingTemplate.convertAndSendToUser(
+                    user.getEmail(), 
+                    "/queue/notifications", 
+                    response
+            );
+        } catch (Exception e) {
+            log.error("Failed to broadcast notification: {}", e.getMessage());
+        }
     }
 }

@@ -34,6 +34,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     private final ShipperLocationRepository shipperLocationRepository;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final DeliveryMapper deliveryMapper;
+    private final com.example.server.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -81,6 +82,22 @@ public class DeliveryServiceImpl implements DeliveryService {
             addStatusHistory(order, shipper, OrderStatus.SHIPPING.name(), "Shipper assigned");
         }
 
+        // Notify Customer
+        notificationService.createNotification(
+                order.getUser().getId(),
+                "Shipper Assigned",
+                "Shipper " + shipper.getFullName() + " has been assigned to your order #" + order.getId(),
+                "SHIPPER_ASSIGNED"
+        );
+
+        // Notify Shipper
+        notificationService.createNotification(
+                shipper.getId(),
+                "New Delivery Assigned",
+                "You have been assigned to deliver order #" + order.getId(),
+                "NEW_DELIVERY"
+        );
+
         return deliveryMapper.toResponse(deliveryAssignmentRepository.save(assignment));
     }
 
@@ -103,6 +120,14 @@ public class DeliveryServiceImpl implements DeliveryService {
         deliveryAssignmentRepository.save(assignment);
 
         addStatusHistory(assignment.getOrder(), assignment.getShipper(), "PICKED_UP", "Order picked up by shipper");
+
+        // Notify Customer
+        notificationService.createNotification(
+                assignment.getOrder().getUser().getId(),
+                "Order Picked Up",
+                "Your order #" + orderId + " has been picked up by the shipper and is on the way.",
+                "ORDER_PICKED_UP"
+        );
     }
 
     @Override
@@ -134,6 +159,14 @@ public class DeliveryServiceImpl implements DeliveryService {
         orderRepository.save(order);
 
         addStatusHistory(order, assignment.getShipper(), OrderStatus.DELIVERED.name(), "Order delivered");
+
+        // Notify Customer
+        notificationService.createNotification(
+                order.getUser().getId(),
+                "Order Delivered",
+                "Your order #" + orderId + " has been successfully delivered. Enjoy your meal!",
+                "ORDER_DELIVERED"
+        );
     }
 
     private void addStatusHistory(Order order, User user, String status, String note) {

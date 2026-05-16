@@ -17,10 +17,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,12 +32,12 @@ class NotificationServiceImplTest {
 
     @Mock
     private NotificationRepository notificationRepository;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private NotificationMapper notificationMapper;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
 
     @InjectMocks
     private NotificationServiceImpl notificationService;
