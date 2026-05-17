@@ -60,8 +60,9 @@ public class OrderController {
 
     @GetMapping("/restaurant/{restaurantId}")
     @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
-    public ResponseEntity<List<OrderSummaryResponse>> getRestaurantOrders(@PathVariable Long restaurantId,
+    public ResponseEntity<List<OrderSummaryResponse>> getRestaurantOrders(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                          @PathVariable Long restaurantId,
                                                                           @RequestParam(required = false) String status) {
-        return ResponseEntity.ok(orderService.getRestaurantOrders(restaurantId, status));
+        return ResponseEntity.ok(orderService.getRestaurantOrders(restaurantId, status, userDetails.getId(), userDetails.getRole()));
     }
 }

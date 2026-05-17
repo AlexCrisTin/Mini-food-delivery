@@ -309,7 +309,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderSummaryResponse> getRestaurantOrders(Long restaurantId, String status) {
+    public List<OrderSummaryResponse> getRestaurantOrders(Long restaurantId, String status, Long requesterId, String requesterRole) {
+        // IDOR Protection: If not ADMIN, verify restaurant ownership
+        if (!com.example.server.enums.Role.ROLE_ADMIN.equals(requesterRole)) {
+            Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Restaurant", "id", restaurantId));
+            
+            if (!restaurant.getOwner().getId().equals(requesterId)) {
+                throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to view orders for this restaurant",
+                        "UNAUTHORIZED_ACCESS");
+            }
+        }
+
         return orderRepository.findByRestaurantIdAndStatus(restaurantId, status).stream()
                 .map(orderMapper::toSummaryResponse)
                 .collect(Collectors.toList());

@@ -1,127 +1,43 @@
 # PHẦN 8 — KIỂM THỬ VÀ TRIỂN KHAI
 
-## 8.1. Chiến lược kiểm thử
+## 8.1. Chiến lược Kiểm thử Đa tầng
+Dự án áp dụng mô hình kiểm thử kim tự tháp để đảm bảo độ tin cậy của mã nguồn từ cấp thấp nhất đến trải nghiệm người dùng cuối.
 
-Hệ thống áp dụng chiến lược kiểm thử **đa tầng** với 3 mức:
+### 8.2. Kiểm thử Đơn vị (Unit Testing)
+- **Backend**: Sử dụng JUnit 5 và Mockito. Tập trung kiểm thử logic State Machine của đơn hàng và các ràng buộc nghiệp vụ trong Service layer. 
+    - *Độ phủ*: ~65 tests đạt trạng thái PASS 100%.
+- **Frontend**: Sử dụng Vitest để kiểm thử các hàm tiện ích (utils) và logic trong Pinia stores.
 
-- **Unit Test** — Kiểm thử logic nghiệp vụ trong Service layer (Mockito + JUnit 5)
-- **Integration Test** — Kiểm thử tương tác với CSDL thực (Testcontainers + MySQL)
-- **E2E Test** — Kiểm thử giao diện người dùng (Cypress)
+### 8.3. Kiểm thử Tích hợp (Integration Testing)
+- **Testcontainers**: Khởi động một container MySQL 8.0 thực thụ trong quá trình chạy test để kiểm thử tầng Repository và các câu lệnh Native SQL phức tạp (Haversine formula).
+- **Flyway Integration**: Đảm bảo tất cả migration script (V1-V9) chạy thành công và tạo ra schema chính xác.
 
-## 8.2. Unit Test (Backend)
+### 8.4. Kiểm thử Chấp nhận (E2E Testing)
+- **Cypress**: Mô phỏng hành trình khách hàng từ lúc đăng nhập, chọn món cho đến khi đặt hàng thành công. Kiểm tra tính đúng đắn của giao diện trên các kích thước màn hình khác nhau.
 
-Sử dụng **JUnit 5** + **Mockito** (`@ExtendWith(MockitoExtension.class)`).
+## 8.5. Quản lý Chất lượng Mã nguồn
+- **JaCoCo**: Báo cáo độ phủ mã nguồn (Code Coverage). Mục tiêu duy trì >80% logic nghiệp vụ quan trọng.
+- **Logging**: Sử dụng SLF4J/Logback với các mức độ log rõ ràng (INFO cho luồng nghiệp vụ, WARN cho bảo mật, ERROR cho lỗi hệ thống).
 
-### 8.2.1. AdminServiceImplTest
-- `approveRestaurant_Success()` — Xác nhận restaurant được approve, notification được gửi tới owner
-- `approveRestaurant_Rejection_Success()` — Xác nhận từ chối, notification chứa "rejected"
-- `approveRestaurant_NotFound_ShouldThrowException()` — Ném `ResourceNotFoundException` khi ID không tồn tại
+## 8.6. Quy trình Triển khai (Deployment)
 
-### 8.2.2. AuthServiceImplTest
-- `register_Success()` — Xác nhận tạo user, mã hóa password, sinh JWT
-- `login_Success()` — Xác nhận xác thực thành công, trả về JWT và thông tin user
+### 8.6.1. Yêu cầu Hệ thống
+- **Runtime**: Java 17+, Node.js 18+.
+- **Database**: MySQL 8.0+.
+- **Environment**: File `.env` chứa các bí mật (Secrets) như DB password và JWT secret.
 
-### 8.2.3. DeliveryServiceImplTest
-- `assignShipper_Success()` — Gán shipper, chuyển order sang SHIPPING
-- `assignShipper_NotAShipper_ShouldThrowException()` — Ném lỗi INVALID_ROLE khi user không phải shipper
-- `markPickedUp_Success()` — Cập nhật status PICKED_UP, ghi nhận pickedUpAt
-- `markPickedUp_Unauthorized_ShouldThrowException()` — Ném FORBIDDEN khi shipper khác cố cập nhật
-- `markDelivered_Success()` — Cập nhật DELIVERED, set isPaid=true
-- `updateLocation_NewLocation_ShouldCreate()` — Tạo mới ShipperLocation
-- `updateLocation_ExistingLocation_ShouldUpdate()` — Cập nhật location hiện có
+### 8.6.2. Các bước triển khai Backend
+1. Build artifact: `./mvnw clean package -DskipTests`
+2. Cấu hình biến môi trường (`SPRING_PROFILES_ACTIVE=prod`).
+3. Chạy ứng dụng: `java -jar target/server-1.0.jar`.
+4. Flyway sẽ tự động nâng cấp schema lên phiên bản mới nhất.
 
-### 8.2.4. NotificationServiceImplTest
-- `getUserNotifications_ShouldReturnMappedResponses()` — Trả về danh sách đúng format
-- `markAsRead_Success()` — Đánh dấu đã đọc
-- `markAsRead_NotFound_ShouldThrowException()` — Ném ResourceNotFoundException
-- `markAsRead_Unauthorized_ShouldThrowException()` — Ném FORBIDDEN khi user không sở hữu notification
-- `markAllAsRead_WithoutType_ShouldCallGlobalReset()` — Gọi markAllAsRead()
-- `markAllAsRead_WithType_ShouldCallFilteredReset()` — Gọi markAllByTypeAsRead()
-- `createNotification_Success() / _UserNotFound_ShouldThrowException()`
+### 8.6.3. Các bước triển khai Frontend
+1. Cài đặt: `npm install`
+2. Build production: `npm run build`
+3. Triển khai thư mục `dist/` lên web server (Nginx/Apache).
 
-### 8.2.5. ReportServiceImplTest
-- `getAdminReport_ShouldAggregateDataCorrectly()` — Xác nhận tổng hợp dữ liệu đúng
-- `getAdminReport_NullRevenue_ShouldReturnZero()` — Xử lý null-safe, trả BigDecimal.ZERO
-
-## 8.3. Integration Test (Backend)
-
-### 8.3.1. BaseIntegrationTest
-- Class cơ sở cho mọi integration test
-- Sử dụng **Testcontainers** với `MySQLContainer` (mysql:8.0)
-- Annotation: `@SpringBootTest`, `@ActiveProfiles("test")`, `@Transactional`
-- Kiểm tra Docker availability trước khi khởi tạo container
-- `@ServiceConnection` tự động cấu hình datasource
-
-### 8.3.2. EntityMappingIntegrationTest
-- `shouldCascadeSaveAddresses()` — Kiểm tra cascade persist User → Address
-- `shouldThrowExceptionWhenDuplicateEmail()` — Kiểm tra ràng buộc UNIQUE trên email
-
-### 8.3.3. OrderRepositoryIntegrationTest
-- `shouldFindOrdersNearLocation()` — Kiểm tra truy vấn tìm đơn hàng theo vị trí (Haversine formula)
-  - Tạo 3 đơn: 1 gần + READY, 1 xa + READY, 1 gần + PENDING
-  - Xác nhận chỉ trả về 1 đơn gần với status READY
-
-### 8.3.4. JwtUtilsTest
-- `shouldGenerateAndValidateToken()` — Sinh token, validate, extract username
-- `shouldFailForInvalidToken()` — Token giả trả về false
-
-## 8.4. E2E Test (Frontend)
-
-- **Framework:** Cypress
-- **Test cơ bản:** Kiểm tra app root URL chứa "You did it!" (boilerplate Vue)
-- **Cấu hình:** `cypress/jsconfig.json` với types: ["cypress"]
-
-## 8.5. Coverage
-
-- **Tool:** JaCoCo Maven Plugin
-- **Cấu hình:** `prepare-agent` (trước test) + `report` (sau test)
-- **Báo cáo:** Sinh trong `target/site/jacoco/`
-
-## 8.6. Triển khai (Deployment)
-
-### 8.6.1. Cấu hình môi trường
-
-Biến môi trường cần thiết (tham khảo `.env.template`):
-
-- **DB_URL** — JDBC URL kết nối MySQL (VD: `jdbc:mysql://localhost:3306/mini_food_db?createDatabaseIfNotExist=true`)
-- **DB_USERNAME** — Username MySQL
-- **DB_PASSWORD** — Password MySQL
-- **JWT_SECRET** — Secret key cho JWT (tối thiểu 32 ký tự)
-- **SPRING_PROFILES_ACTIVE** — Profile Spring Boot (dev/prod)
-
-### 8.6.2. Quy trình khởi động Backend
-
-1. Đảm bảo MySQL đang chạy và database tồn tại (hoặc bật `createDatabaseIfNotExist=true`)
-2. Cấu hình file `.env` tại root hoặc `SRC/backend/`
-3. Chạy `./mvnw spring-boot:run` (hoặc `mvnw.cmd` trên Windows)
-4. Flyway tự động chạy migration (V1 → V2 → V3)
-5. Ứng dụng khởi động tại `http://localhost:8080`
-6. Swagger UI tại `http://localhost:8080/swagger-ui.html`
-7. Console hiển thị thông tin kết nối DB và số user đã đăng ký
-
-### 8.6.3. Quy trình khởi động Frontend
-
-1. Cài đặt dependencies: `npm install`
-2. Chạy dev server: `npm run dev`
-3. Truy cập tại URL hiển thị trên console (mặc định `http://localhost:5173`)
-
-### 8.6.4. Smoke Mode
-
-Hệ thống hỗ trợ chế độ **Smoke Mode** để kiểm tra cấu hình mà không cần CSDL:
-
-- Đặt biến môi trường `APP_SMOKE_MODE=true` hoặc system property `app.smokeMode=true`
-- Tự động loại trừ DataSource, JPA, và JpaRepositories auto-configuration
-- Console hiển thị "[SMOKE MODE] Running without DB/JPA auto-configuration"
-
-## 8.7. Lộ trình phát triển (Roadmap)
-
-### Phase 2 — Kế hoạch tiếp theo
-
-- **Reporting Enhancement:** Xuất báo cáo CSV/Excel, thống kê doanh thu theo nhà hàng
-- **Real-time Updates:** Tích hợp WebSocket hoặc SSE cho cập nhật trạng thái đơn hàng và vị trí shipper
-- **Advanced Security:** Token refresh mechanism, khóa tài khoản sau nhiều lần đăng nhập thất bại
-- **DevOps:** Multi-stage Dockerfile, GitHub Actions CI/CD pipeline
-
----
-
-> **Ghi chú kỹ thuật:** Tên database trong `application-dev.yaml` là `mini_food_db` với option `createDatabaseIfNotExist=true`, cần đảm bảo nhất quán trong mọi môi trường.
+## 8.7. Kế hoạch Duy trì & Mở rộng
+- **Monitoring**: Sử dụng Spring Boot Actuator để theo dõi sức khỏe hệ thống (Health, Metrics).
+- **Scalability**: Kiến trúc Stateless cho phép dễ dàng container hóa (Docker) và triển khai trên các cụm Kubernetes.
+- **Roadmap**: Tích hợp thanh toán qua cổng điện tử (VNPAY/Momo), tối ưu hóa bộ nhớ đệm (Redis) và xây dựng ứng dụng mobile native.

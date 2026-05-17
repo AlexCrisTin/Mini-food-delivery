@@ -20,16 +20,23 @@ public class CustomUserDetails implements UserDetails {
     private final String email;
     private final String password;
     private final String fullName;
+    private final String role;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public static CustomUserDetails build(User user) {
+        String roleName = user.getRole();
         return new CustomUserDetails(
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 user.getFullName(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                roleName,
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + roleName))
         );
+    }
+
+    public String getRole() {
+        return role;
     }
 
     @Override

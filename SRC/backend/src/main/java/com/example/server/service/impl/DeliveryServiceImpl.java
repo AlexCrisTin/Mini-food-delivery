@@ -54,12 +54,21 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     @Transactional
-    public DeliveryAssignmentResponse assignShipper(AssignShipperRequest request) {
+    public DeliveryAssignmentResponse assignShipper(Long requesterId, String requesterRole, AssignShipperRequest request) {
+        final Long finalTargetShipperId;
+
+        // IDOR Protection: If requester is a SHIPPER, they can only assign to themselves
+        if (Role.ROLE_SHIPPER.equals(requesterRole)) {
+            finalTargetShipperId = requesterId;
+        } else {
+            finalTargetShipperId = request.getShipperId();
+        }
+
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ORDER, "id", request.getOrderId()));
 
-        User shipper = userRepository.findById(request.getShipperId())
-                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_USER, "id", request.getShipperId()));
+        User shipper = userRepository.findById(finalTargetShipperId)
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_USER, "id", finalTargetShipperId));
 
         if (!Role.ROLE_SHIPPER.equals(shipper.getRole())) {
             throw new AppException(HttpStatus.BAD_REQUEST, "User is not a shipper", "INVALID_ROLE");
