@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import NotFoundView from '@/views/NotFoundView.vue'
 
@@ -29,6 +29,8 @@ describe('NotFoundView.vue', () => {
       global: { plugins: [router] },
     })
     await wrapper.find('.nf-btn').trigger('click')
+    await flushPromises()
+    await router.isReady()
     expect(router.currentRoute.value.path).toBe('/')
   })
 })
