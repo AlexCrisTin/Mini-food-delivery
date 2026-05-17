@@ -139,6 +139,43 @@ class AdminServiceImplTest {
     }
 
     @Test
+    void shouldRejectRestaurantSuccessfully() {
+        RestaurantApprovalRequest request = new RestaurantApprovalRequest(false, "Bad documents");
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+
+        adminService.approveRestaurant(10L, request);
+
+        assertFalse(restaurant.getIsApproved());
+        verify(restaurantRepository).save(restaurant);
+        verify(notificationService).createNotification(eq(1L), anyString(), contains("rejected"), eq("SYSTEM"));
+        verify(notificationService).createNotification(eq(1L), anyString(), contains("Note: Bad documents"), eq("SYSTEM"));
+    }
+
+    @Test
+    void shouldApproveRestaurantWithoutNote() {
+        RestaurantApprovalRequest request = new RestaurantApprovalRequest(true, "");
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+
+        adminService.approveRestaurant(10L, request);
+
+        assertTrue(restaurant.getIsApproved());
+        verify(notificationService).createNotification(eq(1L), anyString(), argThat(m -> !m.contains("Note:")), eq("SYSTEM"));
+    }
+
+    @Test
+    void shouldGetSystemStatsWithNullRevenue() {
+        when(userRepository.count()).thenReturn(100L);
+        when(restaurantRepository.count()).thenReturn(10L);
+        when(restaurantRepository.findByIsApprovedFalseAndIsDeletedFalse()).thenReturn(Collections.emptyList());
+        when(orderRepository.count()).thenReturn(50L);
+        when(orderRepository.sumTotalRevenue(any(), any())).thenReturn(null);
+
+        AdminStatsResponse stats = adminService.getSystemStats();
+
+        assertEquals(0.0, stats.getTotalRevenue());
+    }
+
+    @Test
     void shouldDeleteUser() {
         adminService.deleteUser(1L);
         verify(userService).deleteUser(1L);

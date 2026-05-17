@@ -211,5 +211,55 @@ class UserServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.getUserProfile(userId));
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUserProfile(userId, new UserProfileUpdateRequest()));
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUserRole(userId, new UserRoleUpdateRequest()));
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUserStatus(userId, new UserStatusUpdateRequest()));
+        assertThrows(ResourceNotFoundException.class, () -> userService.addAddress(userId, new AddressRequest()));
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(userId));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAddressNotFound() {
+        when(addressRepository.findById(addressId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateAddress(userId, addressId, new AddressRequest()));
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteAddress(userId, addressId));
+        assertThrows(ResourceNotFoundException.class, () -> userService.setDefaultAddress(userId, addressId));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeletingOtherUserAddress() {
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(address));
+        assertThrows(AppException.class, () -> userService.deleteAddress(999L, addressId));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenSettingDefaultOtherUserAddress() {
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(address));
+        assertThrows(AppException.class, () -> userService.setDefaultAddress(999L, addressId));
+    }
+
+    @Test
+    void shouldAddNonDefaultAddressSuccessfully() {
+        AddressRequest request = new AddressRequest();
+        request.setIsDefault(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(addressRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        userService.addAddress(userId, request);
+
+        verify(addressRepository, never()).findByUserIdAndIsDefaultTrue(any());
+    }
+
+    @Test
+    void shouldUpdateNonDefaultAddressSuccessfully() {
+        AddressRequest request = new AddressRequest();
+        request.setIsDefault(false);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(address));
+        when(addressRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        userService.updateAddress(userId, addressId, request);
+
+        verify(addressRepository, never()).findByUserIdAndIsDefaultTrue(any());
     }
 }

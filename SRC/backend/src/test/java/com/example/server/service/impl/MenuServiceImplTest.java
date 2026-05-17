@@ -21,6 +21,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -145,6 +146,131 @@ class MenuServiceImplTest {
         menuItem.setIsDeleted(true);
         when(menuItemRepository.findById(itemId)).thenReturn(Optional.of(menuItem));
 
+        assertThrows(ResourceNotFoundException.class, () -> menuService.getMenuItem(itemId));
+    }
+
+    @Test
+    void shouldFilterDeletedCategories() {
+        MenuCategory deletedCategory = new MenuCategory();
+        deletedCategory.setIsDeleted(true);
+        when(menuCategoryRepository.findByRestaurantIdOrderBySortOrderAsc(restaurantId))
+                .thenReturn(List.of(category, deletedCategory));
+
+        var response = menuService.getMenuCategories(restaurantId);
+
+        assertEquals(1, response.size());
+    }
+
+    @Test
+    void shouldUpdateMenuCategorySuccessfully() {
+        MenuCategoryRequest request = new MenuCategoryRequest();
+        request.setName("Updated Name");
+
+        when(menuCategoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(menuCategoryRepository.save(any(MenuCategory.class))).thenReturn(category);
+
+        menuService.updateMenuCategory(ownerId, categoryId, request);
+
+        assertEquals("Updated Name", category.getName());
+        verify(menuCategoryRepository).save(category);
+    }
+
+    @Test
+    void shouldDeleteMenuCategorySuccessfully() {
+        when(menuCategoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        menuService.deleteMenuCategory(ownerId, categoryId);
+
+        assertTrue(category.getIsDeleted());
+        verify(menuCategoryRepository).save(category);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAddMenuItemWithWrongCategory() {
+        MenuItemRequest request = new MenuItemRequest();
+        MenuCategory otherCategory = new MenuCategory();
+        Restaurant otherRestaurant = new Restaurant();
+        otherRestaurant.setId(999L);
+        otherCategory.setRestaurant(otherRestaurant);
+
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(menuCategoryRepository.findById(categoryId)).thenReturn(Optional.of(otherCategory));
+
+        AppException ex = assertThrows(AppException.class, () -> menuService.addMenuItem(ownerId, restaurantId, categoryId, request));
+        assertEquals("INVALID_CATEGORY", ex.getErrorCode());
+    }
+
+    @Test
+    void shouldUpdateMenuItemSuccessfully() {
+        MenuItemRequest request = new MenuItemRequest();
+        request.setName("Updated Item");
+
+        when(menuItemRepository.findById(itemId)).thenReturn(Optional.of(menuItem));
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(menuItemRepository.save(any(MenuItem.class))).thenReturn(menuItem);
+
+        menuService.updateMenuItem(ownerId, itemId, request);
+
+        assertEquals("Updated Item", menuItem.getName());
+    }
+
+    @Test
+    void shouldUpdateMenuItemCategorySuccessfully() {
+        MenuItemRequest request = new MenuItemRequest();
+        request.setCategoryId(categoryId);
+
+        when(menuItemRepository.findById(itemId)).thenReturn(Optional.of(menuItem));
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(menuCategoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(menuItemRepository.save(any(MenuItem.class))).thenReturn(menuItem);
+
+        menuService.updateMenuItem(ownerId, itemId, request);
+
+        assertEquals(category, menuItem.getCategory());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdateMenuItemWithWrongCategory() {
+        MenuItemRequest request = new MenuItemRequest();
+        request.setCategoryId(categoryId);
+        MenuCategory otherCategory = new MenuCategory();
+        Restaurant otherRestaurant = new Restaurant();
+        otherRestaurant.setId(999L);
+        otherCategory.setRestaurant(otherRestaurant);
+
+        when(menuItemRepository.findById(itemId)).thenReturn(Optional.of(menuItem));
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(menuCategoryRepository.findById(categoryId)).thenReturn(Optional.of(otherCategory));
+
+        AppException ex = assertThrows(AppException.class, () -> menuService.updateMenuItem(ownerId, itemId, request));
+        assertEquals("INVALID_CATEGORY", ex.getErrorCode());
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenRestaurantNotFound() {
+        when(menuCategoryRepository.findByRestaurantIdOrderBySortOrderAsc(restaurantId))
+                .thenReturn(Collections.emptyList());
+        var response = menuService.getMenuCategories(restaurantId);
+        assertTrue(response.isEmpty());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAddingCategoryToNonExistentRestaurant() {
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> menuService.addMenuCategory(ownerId, restaurantId, new MenuCategoryRequest()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCategoryNotFound() {
+        when(menuCategoryRepository.findById(categoryId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> menuService.updateMenuCategory(ownerId, categoryId, new MenuCategoryRequest()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMenuItemNotFound() {
+        when(menuItemRepository.findById(itemId)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> menuService.getMenuItem(itemId));
     }
 }

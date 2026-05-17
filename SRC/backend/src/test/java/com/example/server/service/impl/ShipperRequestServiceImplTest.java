@@ -122,4 +122,47 @@ class ShipperRequestServiceImplTest {
 
         assertThrows(AppException.class, () -> shipperRequestService.processRequest(requestId, approval));
     }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFound() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> shipperRequestService.submitRequest(userId, new ShipperRequestSubmission()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRequestNotFound() {
+        when(shipperRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> shipperRequestService.processRequest(requestId, new ShipperRequestApproval()));
+    }
+
+    @Test
+    void shouldNotCreateLocationIfAlreadyExistsOnApproval() {
+        ShipperRequestApproval approval = new ShipperRequestApproval(true, "OK");
+        when(shipperRequestRepository.findById(requestId)).thenReturn(Optional.of(shipperRequest));
+        when(shipperRequestRepository.save(any())).thenReturn(shipperRequest);
+        when(shipperLocationRepository.findByShipperId(userId)).thenReturn(Optional.of(new ShipperLocation()));
+
+        shipperRequestService.processRequest(requestId, approval);
+
+        verify(shipperLocationRepository, never()).save(any(ShipperLocation.class));
+    }
+
+    @Test
+    void shouldGetAllPendingRequests() {
+        when(shipperRequestRepository.findByStatus(ShipperRequestStatus.PENDING))
+                .thenReturn(Collections.singletonList(shipperRequest));
+
+        var result = shipperRequestService.getAllPendingRequests();
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void shouldGetUserRequests() {
+        when(shipperRequestRepository.findByUserId(userId)).thenReturn(Collections.singletonList(shipperRequest));
+
+        var result = shipperRequestService.getUserRequests(userId);
+
+        assertEquals(1, result.size());
+    }
 }

@@ -124,7 +124,58 @@ class OrderServiceImplTest {
 
         assertNotNull(result);
         verify(orderRepository).save(any(Order.class));
-        // Distance based fee: 5.0 + (5km * 2.0) = 15.0
+    }
+
+    @Test
+    void shouldFallbackToDefaultFeeWhenMapServiceFails() {
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setRestaurantId(10L);
+        request.setItems(List.of(new CreateOrderItemRequest(20L, 1, "")));
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+        when(mapService.getRoute(any(), any(), any(), any())).thenThrow(new RuntimeException("API Down"));
+        when(menuItemRepository.findById(20L)).thenReturn(Optional.of(menuItem));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+
+        OrderSummaryResponse result = orderService.createOrder(1L, request);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldUseDefaultFeeWhenRouteIsNull() {
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setRestaurantId(10L);
+        request.setItems(List.of(new CreateOrderItemRequest(20L, 1, "")));
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+        when(mapService.getRoute(any(), any(), any(), any())).thenReturn(null);
+        when(menuItemRepository.findById(20L)).thenReturn(Optional.of(menuItem));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+
+        orderService.createOrder(1L, request);
+        verify(orderRepository).save(argThat(o -> o.getDeliveryFee().compareTo(new BigDecimal("15.00")) == 0));
+    }
+
+    @Test
+    void shouldUseDefaultFeeWhenRoutesListIsEmpty() {
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setRestaurantId(10L);
+        request.setItems(List.of(new CreateOrderItemRequest(20L, 1, "")));
+
+        com.example.server.dto.map.RoutingResponse emptyResponse = new com.example.server.dto.map.RoutingResponse();
+        emptyResponse.setRoutes(Collections.emptyList());
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+        when(mapService.getRoute(any(), any(), any(), any())).thenReturn(emptyResponse);
+        when(menuItemRepository.findById(20L)).thenReturn(Optional.of(menuItem));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+
+        orderService.createOrder(1L, request);
+        verify(orderRepository).save(argThat(o -> o.getDeliveryFee().compareTo(new BigDecimal("15.00")) == 0));
     }
 
     @Test
@@ -136,6 +187,56 @@ class OrderServiceImplTest {
         OrderSummaryResponse result = orderService.getOrderSummary(100L, 99L);
 
         assertNotNull(result);
+    }
+
+    @Test
+    void shouldAllowShipperToViewAssignedOrderSummary() {
+        User shipper = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        DeliveryAssignment assignment = new DeliveryAssignment();
+        assignment.setShipper(shipper);
+        order.setDeliveryAssignment(assignment);
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(shipper));
+
+        OrderSummaryResponse result = orderService.getOrderSummary(100L, 3L);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenShipperNotAssignedViewsOrder() {
+        User shipper = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        order.setDeliveryAssignment(null);
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(shipper));
+
+        assertThrows(AppException.class, () -> orderService.getOrderSummary(100L, 3L));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUnassignedShipperViewsOrder() {
+        User shipper = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        DeliveryAssignment assignment = new DeliveryAssignment();
+        assignment.setShipper(null);
+        order.setDeliveryAssignment(assignment);
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(shipper));
+
+        assertThrows(AppException.class, () -> orderService.getOrderSummary(100L, 3L));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUnauthorizedUserViewsOrder() {
+        User otherUser = User.builder().id(999L).role(Role.ROLE_CUSTOMER).build();
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(999L)).thenReturn(Optional.of(otherUser));
+
+        AppException exception = assertThrows(AppException.class, 
+            () -> orderService.getOrderSummary(100L, 999L));
+        assertEquals("UNAUTHORIZED_ACCESS", exception.getErrorCode());
     }
 
     @Test
@@ -163,15 +264,212 @@ class OrderServiceImplTest {
     }
 
     @Test
+    void shouldAllowAdminToUpdateStatus() {
+        User admin = User.builder().id(99L).role(Role.ROLE_ADMIN).build();
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CONFIRMED.name(), "Admin confirmed");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(admin));
+
+        orderService.updateOrderStatus(100L, 99L, request);
+
+        assertEquals(OrderStatus.CONFIRMED.name(), order.getStatus());
+    }
+
+    @Test
+    void shouldAllowCustomerToCancelOrder() {
+        order.setStatus(OrderStatus.PENDING.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CANCELLED.name(), "Changed mind");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        orderService.updateOrderStatus(100L, 1L, request);
+
+        assertEquals(OrderStatus.CANCELLED.name(), order.getStatus());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenWrongUserCancelsOrder() {
+        User otherCustomer = User.builder().id(999L).role(Role.ROLE_CUSTOMER).build();
+        order.setStatus(OrderStatus.PENDING.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CANCELLED.name(), "Not mine");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(999L)).thenReturn(Optional.of(otherCustomer));
+
+        AppException exception = assertThrows(AppException.class, 
+            () -> orderService.updateOrderStatus(100L, 999L, request));
+        assertEquals("UNAUTHORIZED_ACCESS", exception.getErrorCode());
+    }
+
+    @Test
+    void shouldAllowRestaurantOwnerToRejectOrder() {
+        order.setStatus(OrderStatus.PENDING.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.REJECTED.name(), "No stock");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(owner));
+
+        orderService.updateOrderStatus(100L, 2L, request);
+
+        assertEquals(OrderStatus.REJECTED.name(), order.getStatus());
+    }
+
+    @Test
+    void shouldAllowShipperToUpdateToShipping() {
+        User shipper = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        DeliveryAssignment assignment = new DeliveryAssignment();
+        assignment.setShipper(shipper);
+        order.setDeliveryAssignment(assignment);
+        order.setStatus(OrderStatus.READY.name());
+
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.SHIPPING.name(), "On way");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(shipper));
+
+        orderService.updateOrderStatus(100L, 3L, request);
+
+        assertEquals(OrderStatus.SHIPPING.name(), order.getStatus());
+    }
+
+    @Test
+    void shouldAllowShipperToUpdateToDelivered() {
+        User shipper = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        DeliveryAssignment assignment = new DeliveryAssignment();
+        assignment.setShipper(shipper);
+        order.setDeliveryAssignment(assignment);
+        order.setStatus(OrderStatus.SHIPPING.name());
+
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.DELIVERED.name(), "Done");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(shipper));
+
+        orderService.updateOrderStatus(100L, 3L, request);
+
+        assertEquals(OrderStatus.DELIVERED.name(), order.getStatus());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUnassignedShipperUpdatesToShipping() {
+        User shipper = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        order.setDeliveryAssignment(null);
+        order.setStatus(OrderStatus.READY.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.SHIPPING.name(), "Cheat");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(shipper));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 3L, request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenShipperUpdatesOtherShipperOrder() {
+        User s1 = User.builder().id(3L).role(Role.ROLE_SHIPPER).build();
+        User s2 = User.builder().id(4L).role(Role.ROLE_SHIPPER).build();
+        DeliveryAssignment a = new DeliveryAssignment();
+        a.setShipper(s1);
+        order.setDeliveryAssignment(a);
+        order.setStatus(OrderStatus.SHIPPING.name());
+
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.DELIVERED.name(), "Steal");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(4L)).thenReturn(Optional.of(s2));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 4L, request));
+    }
+
+    @Test
     void shouldThrowExceptionWhenInvalidTransition() {
         order.setStatus(OrderStatus.PENDING.name());
-        // Skip CONFIRMED
         OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.PREPARING.name(), "Skip");
 
         when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
         when(userRepository.findById(2L)).thenReturn(Optional.of(owner));
 
         assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 2L, request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCancellingShippedOrder() {
+        order.setStatus(OrderStatus.SHIPPING.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CANCELLED.name(), "Too late");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        AppException exception = assertThrows(AppException.class, 
+            () -> orderService.updateOrderStatus(100L, 1L, request));
+        assertEquals("INVALID_TRANSITION", exception.getErrorCode());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRejectingShippedOrder() {
+        order.setStatus(OrderStatus.SHIPPING.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.REJECTED.name(), "Too late");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(owner));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 2L, request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCancellingDeliveredOrder() {
+        order.setStatus(OrderStatus.DELIVERED.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CANCELLED.name(), "Too late");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 1L, request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTransitioningFromTerminalState() {
+        order.setStatus(OrderStatus.DELIVERED.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.PENDING.name(), "Back");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(User.builder().id(99L).role(Role.ROLE_ADMIN).build()));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 99L, request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenStatusIsNull() {
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(null, "Err");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 1L, request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenStatusIsInvalid() {
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest("JUNK", "Err");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 1L, request));
+    }
+
+    @Test
+    void shouldPublishEventWhenOrderIsReady() {
+        order.setStatus(OrderStatus.PREPARING.name());
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.READY.name(), "Ready");
+
+        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(owner));
+
+        orderService.updateOrderStatus(100L, 2L, request);
+
+        verify(eventPublisher).publishEvent(any(OrderReadyEvent.class));
     }
 
     @Test
@@ -186,11 +484,30 @@ class OrderServiceImplTest {
 
     @Test
     void shouldGetRestaurantOrders() {
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
         when(orderRepository.findByRestaurantIdAndStatus(10L, "PENDING"))
                 .thenReturn(Collections.singletonList(order));
 
-        List<OrderSummaryResponse> result = orderService.getRestaurantOrders(10L, "PENDING");
+        List<OrderSummaryResponse> result = orderService.getRestaurantOrders(10L, "PENDING", 2L, "OWNER");
 
         assertEquals(1, result.size());
+    }
+
+    @Test
+    void shouldAllowAdminToGetRestaurantOrdersWithoutOwnershipCheck() {
+        when(orderRepository.findByRestaurantIdAndStatus(10L, "PENDING"))
+                .thenReturn(Collections.singletonList(order));
+
+        List<OrderSummaryResponse> result = orderService.getRestaurantOrders(10L, "PENDING", 99L, "ADMIN");
+
+        assertEquals(1, result.size());
+        verify(restaurantRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNonOwnerGetsRestaurantOrders() {
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+
+        assertThrows(AppException.class, () -> orderService.getRestaurantOrders(10L, "PENDING", 99L, "OWNER"));
     }
 }

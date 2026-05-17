@@ -110,7 +110,7 @@ class DeliveryServiceImplTest {
         when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.of(new DeliveryAssignment()));
         when(deliveryAssignmentRepository.save(any(DeliveryAssignment.class))).thenReturn(assignment);
 
-        DeliveryAssignmentResponse response = deliveryService.assignShipper(request);
+        DeliveryAssignmentResponse response = deliveryService.assignShipper(shipperId, "ROLE_SHIPPER", request);
 
         assertNotNull(response);
         assertEquals(OrderStatus.SHIPPING.name(), order.getStatus());
@@ -125,7 +125,7 @@ class DeliveryServiceImplTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(userRepository.findById(shipperId)).thenReturn(Optional.of(shipper));
 
-        AppException exception = assertThrows(AppException.class, () -> deliveryService.assignShipper(request));
+        AppException exception = assertThrows(AppException.class, () -> deliveryService.assignShipper(shipperId, "ROLE_SHIPPER", request));
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
         assertEquals("INVALID_ROLE", exception.getErrorCode());
     }
@@ -270,5 +270,120 @@ class DeliveryServiceImplTest {
         DeliveryAssignmentResponse response = deliveryService.getByOrderId(orderId, shipperId);
 
         assertNotNull(response);
+    }
+
+    @Test
+    void shouldAssignShipperAsAdmin() {
+        AssignShipperRequest request = new AssignShipperRequest(orderId, 3L);
+        User otherShipper = new User();
+        otherShipper.setId(3L);
+        otherShipper.setRole(Role.ROLE_SHIPPER);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(otherShipper));
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+        when(deliveryAssignmentRepository.save(any())).thenReturn(assignment);
+
+        deliveryService.assignShipper(99L, Role.ROLE_ADMIN, request);
+
+        verify(userRepository).findById(3L); // Should use shipperId from request
+    }
+
+    @Test
+    void shouldAssignShipperSelfWhenRequesterIsShipper() {
+        AssignShipperRequest request = new AssignShipperRequest(orderId, 999L); // Request tries to assign someone else
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(userRepository.findById(shipperId)).thenReturn(Optional.of(shipper));
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+        when(deliveryAssignmentRepository.save(any())).thenReturn(assignment);
+
+        deliveryService.assignShipper(shipperId, Role.ROLE_SHIPPER, request);
+
+        verify(userRepository).findById(shipperId); // Should override with requesterId
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMarkingPickedUpInvalidState() {
+        assignment.setStatus(DeliveryAssignmentStatus.UNASSIGNED.name());
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.of(assignment));
+
+        assertThrows(AppException.class, () -> deliveryService.markPickedUp(shipperId, orderId, new MarkPickupRequest()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMarkingDeliveredInvalidState() {
+        assignment.setStatus(DeliveryAssignmentStatus.ASSIGNED.name());
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.of(assignment));
+
+        assertThrows(AppException.class, () -> deliveryService.markDelivered(shipperId, orderId, new MarkDeliveredRequest()));
+    }
+
+    @Test
+    void shouldAllowAdminToViewShipperLocation() {
+        ShipperLocation loc = new ShipperLocation();
+        loc.setShipper(shipper);
+        User admin = new User();
+        admin.setId(99L);
+        admin.setRole(Role.ROLE_ADMIN);
+
+        when(shipperLocationRepository.findByShipperId(shipperId)).thenReturn(Optional.of(loc));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(admin));
+
+        assertNotNull(deliveryService.getShipperLocation(shipperId, 99L));
+    }
+
+    @Test
+    void shouldAllowShipperToViewOwnLocation() {
+        ShipperLocation loc = new ShipperLocation();
+        loc.setShipper(shipper);
+
+        when(shipperLocationRepository.findByShipperId(shipperId)).thenReturn(Optional.of(loc));
+        when(userRepository.findById(shipperId)).thenReturn(Optional.of(shipper));
+
+        assertNotNull(deliveryService.getShipperLocation(shipperId, shipperId));
+    }
+
+    @Test
+    void shouldAllowAdminToViewAssignment() {
+        User admin = new User();
+        admin.setId(99L);
+        admin.setRole(Role.ROLE_ADMIN);
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.of(assignment));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(admin));
+
+        assertNotNull(deliveryService.getByOrderId(orderId, 99L));
+    }
+
+    @Test
+    void shouldAllowCustomerToViewAssignment() {
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.of(assignment));
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+
+        assertNotNull(deliveryService.getByOrderId(orderId, customer.getId()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenViewingAssignmentUnauthorized() {
+        User otherUser = new User();
+        otherUser.setId(999L);
+        otherUser.setRole(Role.ROLE_CUSTOMER);
+        when(deliveryAssignmentRepository.findByOrderId(orderId)).thenReturn(Optional.of(assignment));
+        when(userRepository.findById(999L)).thenReturn(Optional.of(otherUser));
+
+        assertThrows(AppException.class, () -> deliveryService.getByOrderId(orderId, 999L));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenOrderNotFoundInAssign() {
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> deliveryService.assignShipper(shipperId, Role.ROLE_SHIPPER, new AssignShipperRequest(orderId, shipperId)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenShipperNotFoundInUpdateLocation() {
+        when(shipperLocationRepository.findByShipperId(shipperId)).thenReturn(Optional.empty());
+        when(userRepository.findById(shipperId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> deliveryService.updateLocation(shipperId, new ShipperLocationUpdateRequest()));
     }
 }

@@ -243,4 +243,33 @@ class AuthServiceImplTest {
         assertEquals("EXPIRED_REFRESH_TOKEN", ex.getErrorCode());
         verify(refreshTokenRepository, times(1)).delete(refreshToken);
     }
+
+    @Test
+    void shouldThrowExceptionWhenLoginUserNotFound() {
+        LoginRequest request = new LoginRequest("nonexistent@example.com", "any");
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class, () -> authService.login(request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRefreshTokenNotFound() {
+        TokenRefreshRequest request = new TokenRefreshRequest();
+        request.setRefreshToken("invalid");
+        when(refreshTokenRepository.findByToken("invalid")).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class, () -> authService.refreshToken(request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCreateRefreshTokenUserNotFound() {
+        // Internal method createRefreshToken is called by login/register
+        // Let's force it through register by mocking userRepository.findById to return empty AFTER save
+        RegisterRequest request = new RegisterRequest(email, password, "Test User", "12345678", null);
+        when(userRepository.existsByEmail(email)).thenReturn(false);
+        when(userRepository.save(any())).thenReturn(user);
+        when(userRepository.findById(any())).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class, () -> authService.register(request));
+    }
 }

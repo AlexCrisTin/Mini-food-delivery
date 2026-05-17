@@ -51,6 +51,7 @@ class NotificationServiceImplTest {
     void setUp() {
         user = new User();
         user.setId(userId);
+        user.setEmail("user@example.com");
 
         notification = new Notification();
         notification.setId(notificationId);
@@ -151,5 +152,27 @@ class NotificationServiceImplTest {
 
         assertThrows(ResourceNotFoundException.class, 
             () -> notificationService.createNotification(userId, "Title", "Message", "INFO"));
+    }
+
+    @Test
+    void shouldHandleBroadcastFailureInCreateNotification() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(notificationRepository.save(any())).thenReturn(notification);
+        doThrow(new RuntimeException("STOMP error")).when(messagingTemplate)
+                .convertAndSendToUser(anyString(), anyString(), any());
+
+        // Should not throw exception, just log it
+        assertDoesNotThrow(() -> notificationService.createNotification(userId, "Title", "Message", "INFO"));
+        
+        verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    void shouldMarkAllNotificationsAsReadWhenTypeIsBlank() {
+        MarkAllNotificationsReadRequest request = new MarkAllNotificationsReadRequest("   ");
+
+        notificationService.markAllAsRead(userId, request);
+
+        verify(notificationRepository).markAllAsRead(userId);
     }
 }

@@ -79,3 +79,14 @@
 | SEC-002 | Update Order Status (Random User) | Returns 403 FORBIDDEN |
 | SEC-003 | Mark Notification Read (Not Recipient) | Returns 403 FORBIDDEN |
 | SEC-004 | View Shipper Location (No Active Order) | Returns 403 FORBIDDEN |
+
+## 8. Validation & Input Integrity
+
+| ID | Case | Expected Result |
+|:---|:---|:---|
+| VAL-001 | Create Restaurant with Negative Latitude | Returns 400 BAD_REQUEST (Validation Error) |
+| VAL-002 | Update Profile with Invalid Email Format | Returns 400 BAD_REQUEST (Validation Error) |
+| VAL-003 | Menu Item Price set to Zero | Returns 400 BAD_REQUEST (Validation Error) |
+| VAL-004 | Search with Extremely Large Page Size | System caps page size or returns 400 |
+| VAL-005 | Upload Non-Image File for Restaurant | Returns 400 BAD_REQUEST (INVALID_FILE_TYPE) |
+

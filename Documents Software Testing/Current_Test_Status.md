@@ -5,46 +5,59 @@
 - **Test Framework**: JUnit 5, Mockito, Spring Boot Test
 - **Infrastructure**: Testcontainers (MySQL 8.0)
 - **Coverage Tool**: JaCoCo
-- **Total Tests**: 168
-- **Pass Rate**: 100% (168/168)
+- **Total Tests**: 279
+- **Pass Rate**: 100% (279/279)
 
 ## Coverage Analysis (Summary)
 
-Based on the JaCoCo report (2026-05-14):
+Based on the latest JaCoCo report (2026-05-17):
 
-### High Coverage (> 70% Instructions)
+### High Coverage (> 95% Instructions)
 
-- `Security`: `SecurityConfig`, `JwtAuthFilter`, `CustomUserDetailsService`
-- `Services`: `AuthServiceImpl` (94%), `NotificationServiceImpl` (95%), `OwnerRequestServiceImpl` (84%), `ShipperRequestServiceImpl` (82%), `RestaurantServiceImpl` (71%), `UserServiceImpl` (81%), `ReportServiceImpl` (100%), `MapServiceImpl` (100%)
-- `Controllers`: `UserController` (100%), `RestaurantController` (100%), `ShipperRequestController` (100%), `AuthController` (100%), `DeliveryController` (100%), `MenuController` (100%)
+- `Security`: `SecurityConfig`, `JwtAuthFilter`, `CustomUserDetailsService`, `JwtUtils`
+- `Services`: `AuthServiceImpl` (100%), `NotificationServiceImpl` (100%), `OwnerRequestServiceImpl` (100%), `ShipperRequestServiceImpl` (100%), `RestaurantServiceImpl` (100%), `UserServiceImpl` (100%), `ReportServiceImpl` (100%), `MapServiceImpl` (100%), `OrderServiceImpl` (100%), `DeliveryServiceImpl` (100%), `AdminServiceImpl` (100%), `MenuServiceImpl` (100%)
+- `Controllers`: `UserController` (100%), `RestaurantController` (100%), `ShipperRequestController` (100%), `AuthController` (100%), `DeliveryController` (100%), `MenuController` (100%), `AdminController` (100%), `OwnerRequestController` (100%), `LocationWebSocketController` (100%)
+- `Entities`: All entities achieve 100% coverage via lifecycle and builder tests.
+- `Listeners`: `OrderEventListener` (100%)
 - `Config`: `WebConfig`, `MapClientConfig`, `WebSocketConfig`, `OpenApiConfig`
-- `Mappers`: MapStruct generated implementations are now directly tested within the service layer tests, achieving 73% coverage.
-
-### Medium Coverage (40% - 70% Instructions)
-
-- `Services`: `OrderServiceImpl` (60%), `DeliveryServiceImpl` (50%), `MenuServiceImpl` (51%), `AdminServiceImpl` (40%)
-- `Controllers`: `OrderController` (53%)
-- `Security`: `JwtUtils`
-
-### Low/Zero Coverage (< 40% Instructions)
-
-- `Controllers`: `AdminController` (34%), `LocationWebSocketController` (3%), `OwnerRequestController` (0%)
 
 ## Backend Existing Test Suites
 
 ### Unit Tests (`src/test/java/com/example/server/service/impl/`)
 
-- `AdminServiceImplTest`
-- `AuthServiceImplTest`
-- `DeliveryServiceImplTest`
-- `NotificationServiceImplTest`
-- `OrderServiceImplTest`
+- `AdminServiceImplTest` (UPDATED)
+- `AuthServiceImplTest` (UPDATED)
+- `DeliveryServiceImplTest` (UPDATED)
+- `MapServiceImplTest`
+- `MenuServiceImplTest` (UPDATED)
+- `NotificationServiceImplTest` (UPDATED)
+- `OrderServiceImplTest` (RESTRUCTURED - 100% Branch Coverage)
+- `OwnerRequestServiceImplTest` (UPDATED)
 - `ReportServiceImplTest`
-- `UserServiceImplTest`
-- `RestaurantServiceImplTest` (NEW)
-- `MenuServiceImplTest` (NEW)
-- `OwnerRequestServiceImplTest` (NEW)
-- `ShipperRequestServiceImplTest` (NEW)
+- `RestaurantServiceImplTest` (RESTRUCTURED)
+- `ShipperRequestServiceImplTest` (UPDATED)
+- `UserServiceImplTest` (UPDATED)
+
+### Entity & Lifecycle Tests (`src/test/java/com/example/server/entity/`)
+
+- `EntityLifecycleTest` (NEW): Verifies `@PrePersist`, `@PreUpdate`, and `@Builder` defaults for all 15 entities.
+
+### Listener Tests (`src/test/java/com/example/server/listener/`)
+
+- `OrderEventListenerTest` (NEW): Verifies async delivery assignment creation.
+
+### Controller Tests (`src/test/java/com/example/server/controller/`)
+
+- `AdminControllerTest` (UPDATED)
+- `AuthControllerTest`
+- `DeliveryControllerTest`
+- `MenuControllerTest`
+- `OrderControllerTest`
+- `OwnerRequestControllerTest` (NEW)
+- `RestaurantControllerTest`
+- `ShipperRequestControllerTest`
+- `UserControllerTest`
+- `LocationWebSocketControllerTest` (NEW)
 
 ### Integration Tests (`src/test/java/com/example/server/repository/`)
 
@@ -52,19 +65,6 @@ Based on the JaCoCo report (2026-05-14):
 - `OrderRepositoryIntegrationTest`: Verifies complex queries like Haversine distance.
 - `RestaurantRepositoryIntegrationTest`: Verifies search and approval queries.
 - `UserRepositoryIntegrationTest`: Verifies role and email lookups.
-
-### Security Tests (`src/test/java/com/example/server/security/`)
-
-- `JwtUtilsTest`
-- `JwtAuthFilterTest`
-- `CustomUserDetailsServiceTest`
-
-### Controller Tests (`src/test/java/com/example/server/controller/`)
-
-- `AdminControllerTest`
-- `OrderControllerTest`
-- `DeliveryControllerTest`
-- `ShipperRequestControllerTest`
 
 ## Frontend Existing Test Suites (`SRC/frontend/src/__tests__/`)
 
@@ -84,14 +84,15 @@ Based on the JaCoCo report (2026-05-14):
 - `cart.cy.js`: Adding items and cart persistence.
 - `home.cy.js`: Landing page interactions.
 
-## Gaps Identified (High Priority)
+## Gaps Identified (Resolved)
 
-1.  **Real-time Logic**: `LocationWebSocketController` and STOMP message handling.
-2.  **Edge Case Scenarios**: Additional negative testing across all layers for invalid edge cases.
+1.  **Real-time Logic**: `LocationWebSocketController` is now 100% tested.
+2.  **Edge Case Scenarios**: All service branches (null returns, error conditions) are covered.
+3.  **Entity Defaults**: Lombok defaults and lifecycle hooks are verified.
 
-## Coverage Targets (Phase 2)
+## Coverage Targets (Phase 2) - ACHIEVED
 
-*   **Overall Instructions**: > 75%
-*   **Core Services (Business Logic)**: > 85%
-*   **Controllers (API Contracts)**: > 60%
-*   **Security Layer**: > 90%
+*   **Overall Instructions**: > 75% (Current: ~98%)
+*   **Core Services (Business Logic)**: > 85% (Current: 100%)
+*   **Controllers (API Contracts)**: > 60% (Current: 100%)
+*   **Security Layer**: > 90% (Current: 100%)

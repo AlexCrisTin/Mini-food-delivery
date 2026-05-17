@@ -119,4 +119,35 @@ class OwnerRequestServiceImplTest {
 
         assertThrows(AppException.class, () -> ownerRequestService.processRequest(requestId, approval));
     }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFound() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> ownerRequestService.submitRequest(userId, new OwnerRequestSubmission()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRequestNotFound() {
+        when(ownerRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> ownerRequestService.processRequest(requestId, new OwnerRequestApproval()));
+    }
+
+    @Test
+    void shouldGetAllPendingRequests() {
+        when(ownerRequestRepository.findByStatus(OwnerRequestStatus.PENDING))
+                .thenReturn(Collections.singletonList(ownerRequest));
+
+        var result = ownerRequestService.getAllPendingRequests();
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void shouldGetUserRequests() {
+        when(ownerRequestRepository.findByUserId(userId)).thenReturn(Collections.singletonList(ownerRequest));
+
+        var result = ownerRequestService.getUserRequests(userId);
+
+        assertEquals(1, result.size());
+    }
 }

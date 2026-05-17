@@ -25,6 +25,8 @@ import java.math.BigDecimal;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -63,6 +65,7 @@ class DeliveryControllerTest {
         shipperDetails = CustomUserDetails.builder()
                 .id(1L)
                 .email("shipper@test.com")
+                .role("SHIPPER")
                 .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_SHIPPER")))
                 .build();
 
@@ -82,7 +85,7 @@ class DeliveryControllerTest {
         DeliveryAssignmentResponse response = new DeliveryAssignmentResponse();
         response.setId(100L);
 
-        when(deliveryService.assignShipper(any(AssignShipperRequest.class))).thenReturn(response);
+        when(deliveryService.assignShipper(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/deliveries/assign")
                 .with(user(shipperDetails))
