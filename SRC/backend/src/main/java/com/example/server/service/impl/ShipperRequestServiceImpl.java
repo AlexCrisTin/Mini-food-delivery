@@ -10,6 +10,7 @@ import com.example.server.enums.Role;
 import com.example.server.enums.ShipperRequestStatus;
 import com.example.server.exception.AppException;
 import com.example.server.exception.ResourceNotFoundException;
+import com.example.server.mapper.ShipperRequestMapper;
 import com.example.server.repository.ShipperLocationRepository;
 import com.example.server.repository.ShipperRequestRepository;
 import com.example.server.repository.UserRepository;
@@ -30,6 +31,7 @@ public class ShipperRequestServiceImpl implements ShipperRequestService {
     private final ShipperRequestRepository shipperRequestRepository;
     private final UserRepository userRepository;
     private final ShipperLocationRepository shipperLocationRepository;
+    private final ShipperRequestMapper shipperRequestMapper;
 
     @Override
     @Transactional
@@ -53,20 +55,20 @@ public class ShipperRequestServiceImpl implements ShipperRequestService {
                 .status(ShipperRequestStatus.PENDING)
                 .build();
 
-        return mapToResponse(shipperRequestRepository.save(shipperRequest));
+        return shipperRequestMapper.toResponse(shipperRequestRepository.save(shipperRequest));
     }
 
     @Override
     public List<ShipperRequestResponse> getUserRequests(Long userId) {
         return shipperRequestRepository.findByUserId(userId).stream()
-                .map(this::mapToResponse)
+                .map(shipperRequestMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<ShipperRequestResponse> getAllPendingRequests() {
         return shipperRequestRepository.findByStatus(ShipperRequestStatus.PENDING).stream()
-                .map(this::mapToResponse)
+                .map(shipperRequestMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -88,7 +90,7 @@ public class ShipperRequestServiceImpl implements ShipperRequestService {
         }
 
         request.setAdminNote(approval.getAdminNote());
-        return mapToResponse(shipperRequestRepository.save(request));
+        return shipperRequestMapper.toResponse(shipperRequestRepository.save(request));
     }
 
     private void promoteToShipper(ShipperRequest request) {
@@ -107,19 +109,5 @@ public class ShipperRequestServiceImpl implements ShipperRequestService {
             location.setIsOnline(false);
             shipperLocationRepository.save(location);
         }
-    }
-
-    private ShipperRequestResponse mapToResponse(ShipperRequest request) {
-        return ShipperRequestResponse.builder()
-                .id(request.getId())
-                .userId(request.getUser().getId())
-                .userEmail(request.getUser().getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .licensePlate(request.getLicensePlate())
-                .status(request.getStatus())
-                .adminNote(request.getAdminNote())
-                .createdAt(request.getCreatedAt())
-                .updatedAt(request.getUpdatedAt())
-                .build();
     }
 }

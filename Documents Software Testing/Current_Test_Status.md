@@ -5,12 +5,12 @@
 - **Test Framework**: JUnit 5, Mockito, Spring Boot Test
 - **Infrastructure**: Testcontainers (MySQL 8.0)
 - **Coverage Tool**: JaCoCo
-- **Total Tests**: 279
-- **Pass Rate**: 100% (279/279)
+- **Total Tests**: 325
+- **Pass Rate**: 100% (325/325)
 
 ## Coverage Analysis (Summary)
 
-Based on the latest JaCoCo report (2026-05-17):
+Based on the latest JaCoCo report (2026-05-18):
 
 ### High Coverage (> 95% Instructions)
 
@@ -19,6 +19,7 @@ Based on the latest JaCoCo report (2026-05-17):
 - `Controllers`: `UserController` (100%), `RestaurantController` (100%), `ShipperRequestController` (100%), `AuthController` (100%), `DeliveryController` (100%), `MenuController` (100%), `AdminController` (100%), `OwnerRequestController` (100%), `LocationWebSocketController` (100%)
 - `Entities`: All entities achieve 100% coverage via lifecycle and builder tests.
 - `Listeners`: `OrderEventListener` (100%)
+- `Mappers`: All MapStruct mappers achieve 100% coverage via dedicated unit tests.
 - `Config`: `WebConfig`, `MapClientConfig`, `WebSocketConfig`, `OpenApiConfig`
 
 ## Backend Existing Test Suites
