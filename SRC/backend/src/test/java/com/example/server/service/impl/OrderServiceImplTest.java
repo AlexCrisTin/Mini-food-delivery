@@ -7,7 +7,6 @@ import com.example.server.enums.OrderStatus;
 import com.example.server.enums.Role;
 import com.example.server.event.OrderReadyEvent;
 import com.example.server.exception.AppException;
-import com.example.server.exception.ResourceNotFoundException;
 import com.example.server.mapper.OrderMapper;
 import com.example.server.repository.*;
 import com.example.server.service.MapService;
@@ -23,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -57,7 +55,8 @@ class OrderServiceImplTest {
     private NotificationService notificationService;
 
     @Spy
-    private com.example.server.mapper.DeliveryMapper deliveryMapper = Mappers.getMapper(com.example.server.mapper.DeliveryMapper.class);
+    private com.example.server.mapper.DeliveryMapper deliveryMapper = Mappers
+            .getMapper(com.example.server.mapper.DeliveryMapper.class);
 
     @Spy
     private OrderMapper orderMapper = Mappers.getMapper(OrderMapper.class);
@@ -78,7 +77,7 @@ class OrderServiceImplTest {
 
         customer = User.builder().id(1L).fullName("Customer").role(Role.ROLE_CUSTOMER).build();
         owner = User.builder().id(2L).fullName("Owner").role(Role.ROLE_OWNER).build();
-        
+
         restaurant = Restaurant.builder()
                 .id(10L)
                 .name("Test Restaurant")
@@ -234,8 +233,8 @@ class OrderServiceImplTest {
         when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
         when(userRepository.findById(999L)).thenReturn(Optional.of(otherUser));
 
-        AppException exception = assertThrows(AppException.class, 
-            () -> orderService.getOrderSummary(100L, 999L));
+        AppException exception = assertThrows(AppException.class,
+                () -> orderService.getOrderSummary(100L, 999L));
         assertEquals("UNAUTHORIZED_ACCESS", exception.getErrorCode());
     }
 
@@ -266,7 +265,8 @@ class OrderServiceImplTest {
     @Test
     void shouldAllowAdminToUpdateStatus() {
         User admin = User.builder().id(99L).role(Role.ROLE_ADMIN).build();
-        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CONFIRMED.name(), "Admin confirmed");
+        OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.CONFIRMED.name(),
+                "Admin confirmed");
 
         when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
         when(userRepository.findById(99L)).thenReturn(Optional.of(admin));
@@ -298,8 +298,8 @@ class OrderServiceImplTest {
         when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
         when(userRepository.findById(999L)).thenReturn(Optional.of(otherCustomer));
 
-        AppException exception = assertThrows(AppException.class, 
-            () -> orderService.updateOrderStatus(100L, 999L, request));
+        AppException exception = assertThrows(AppException.class,
+                () -> orderService.updateOrderStatus(100L, 999L, request));
         assertEquals("UNAUTHORIZED_ACCESS", exception.getErrorCode());
     }
 
@@ -401,8 +401,8 @@ class OrderServiceImplTest {
         when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
 
-        AppException exception = assertThrows(AppException.class, 
-            () -> orderService.updateOrderStatus(100L, 1L, request));
+        AppException exception = assertThrows(AppException.class,
+                () -> orderService.updateOrderStatus(100L, 1L, request));
         assertEquals("INVALID_TRANSITION", exception.getErrorCode());
     }
 
@@ -434,7 +434,8 @@ class OrderServiceImplTest {
         OrderStatusUpdateRequest request = new OrderStatusUpdateRequest(OrderStatus.PENDING.name(), "Back");
 
         when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
-        when(userRepository.findById(99L)).thenReturn(Optional.of(User.builder().id(99L).role(Role.ROLE_ADMIN).build()));
+        when(userRepository.findById(99L))
+                .thenReturn(Optional.of(User.builder().id(99L).role(Role.ROLE_ADMIN).build()));
 
         assertThrows(AppException.class, () -> orderService.updateOrderStatus(100L, 99L, request));
     }

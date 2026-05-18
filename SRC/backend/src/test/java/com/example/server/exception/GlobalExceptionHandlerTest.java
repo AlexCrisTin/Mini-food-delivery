@@ -58,7 +58,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldHandleAccessDenied() {
         // Arrange
-        org.springframework.security.access.AccessDeniedException ex = new org.springframework.security.access.AccessDeniedException("Access denied");
+        org.springframework.security.access.AccessDeniedException ex = new org.springframework.security.access.AccessDeniedException(
+                "Access denied");
 
         // Act
         ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleAccessDenied(ex);
@@ -74,7 +75,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldHandleOptimisticLockingFailure() {
         // Arrange
-        org.springframework.orm.ObjectOptimisticLockingFailureException ex = new org.springframework.orm.ObjectOptimisticLockingFailureException("concurrency", new RuntimeException());
+        org.springframework.orm.ObjectOptimisticLockingFailureException ex = new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                "concurrency", new RuntimeException());
 
         // Act
         ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleOptimisticLockingFailure(ex);
@@ -106,7 +108,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldHandleDataIntegrityViolation() {
         // Arrange
-        org.springframework.dao.DataIntegrityViolationException ex = new org.springframework.dao.DataIntegrityViolationException("constraint violation");
+        org.springframework.dao.DataIntegrityViolationException ex = new org.springframework.dao.DataIntegrityViolationException(
+                "constraint violation");
 
         // Act
         ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleDataIntegrityViolation(ex);
@@ -141,7 +144,7 @@ class GlobalExceptionHandlerTest {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);
         FieldError fieldError = new FieldError("object", "field", "must not be null");
-        
+
         when(ex.getBindingResult()).thenReturn(bindingResult);
         when(bindingResult.getAllErrors()).thenReturn(List.of(fieldError));
 

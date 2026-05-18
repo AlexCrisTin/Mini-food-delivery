@@ -1,7 +1,6 @@
 package com.example.server.service.impl;
 
 import com.example.server.dto.owner.OwnerRequestApproval;
-import com.example.server.dto.owner.OwnerRequestResponse;
 import com.example.server.dto.owner.OwnerRequestSubmission;
 import com.example.server.entity.OwnerRequest;
 import com.example.server.entity.Restaurant;
@@ -129,13 +128,15 @@ class OwnerRequestServiceImplTest {
     @Test
     void shouldThrowExceptionWhenUserNotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> ownerRequestService.submitRequest(userId, new OwnerRequestSubmission()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> ownerRequestService.submitRequest(userId, new OwnerRequestSubmission()));
     }
 
     @Test
     void shouldThrowExceptionWhenRequestNotFound() {
         when(ownerRequestRepository.findById(requestId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> ownerRequestService.processRequest(requestId, new OwnerRequestApproval()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> ownerRequestService.processRequest(requestId, new OwnerRequestApproval()));
     }
 
     @Test

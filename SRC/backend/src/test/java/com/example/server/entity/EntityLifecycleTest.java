@@ -4,7 +4,6 @@ import com.example.server.enums.OwnerRequestStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +16,6 @@ class EntityLifecycleTest {
         assertNotNull(user.getCreatedAt());
         assertNotNull(user.getUpdatedAt());
 
-        LocalDateTime oldUpdate = user.getUpdatedAt();
         user.onUpdate();
         assertNotNull(user.getUpdatedAt());
     }
@@ -28,7 +26,7 @@ class EntityLifecycleTest {
         restaurant.onCreate();
         assertNotNull(restaurant.getCreatedAt());
         assertNotNull(restaurant.getUpdatedAt());
-        
+
         restaurant.onUpdate();
         assertNotNull(restaurant.getUpdatedAt());
     }
@@ -39,7 +37,7 @@ class EntityLifecycleTest {
         order.onCreate();
         assertNotNull(order.getCreatedAt());
         assertNotNull(order.getUpdatedAt());
-        
+
         order.onUpdate();
         assertNotNull(order.getUpdatedAt());
     }
@@ -50,7 +48,7 @@ class EntityLifecycleTest {
         item.onCreate();
         assertNotNull(item.getCreatedAt());
         assertNotNull(item.getUpdatedAt());
-        
+
         item.onUpdate();
         assertNotNull(item.getUpdatedAt());
     }
@@ -61,7 +59,7 @@ class EntityLifecycleTest {
         request.onCreate();
         assertNotNull(request.getCreatedAt());
         assertEquals(OwnerRequestStatus.PENDING, request.getStatus());
-        
+
         request.onUpdate();
         assertNotNull(request.getUpdatedAt());
     }
@@ -92,7 +90,7 @@ class EntityLifecycleTest {
         ShipperLocation location = new ShipperLocation();
         location.onCreate();
         assertNotNull(location.getUpdatedAt());
-        
+
         location.onUpdate();
         assertNotNull(location.getUpdatedAt());
     }
@@ -102,7 +100,7 @@ class EntityLifecycleTest {
         ShipperRequest request = new ShipperRequest();
         request.onCreate();
         assertNotNull(request.getCreatedAt());
-        
+
         request.onUpdate();
         assertNotNull(request.getUpdatedAt());
     }
@@ -112,38 +110,13 @@ class EntityLifecycleTest {
         RestaurantCategory category = new RestaurantCategory();
         category.onCreate();
         assertNotNull(category.getCreatedAt());
-        
+
         category.onUpdate();
         assertNotNull(category.getUpdatedAt());
     }
 
     @Test
-    void testBuilderDefaults() {
-        Address address = Address.builder().build();
-        assertFalse(address.getIsDefault());
-
-        DeliveryAssignment assignment = DeliveryAssignment.builder().build();
-        assertEquals("UNASSIGNED", assignment.getStatus());
-
-        MenuCategory category = MenuCategory.builder().build();
-        assertEquals(0, category.getSortOrder());
-        assertFalse(category.getIsDeleted());
-
-        MenuItem item = MenuItem.builder().build();
-        assertTrue(item.getIsAvailable());
-        assertFalse(item.getIsDeleted());
-
-        Notification notification = Notification.builder().build();
-        assertFalse(notification.getIsRead());
-
-        Order order = Order.builder().build();
-        assertEquals(BigDecimal.ZERO, order.getDeliveryFee());
-        assertEquals("COD", order.getPaymentMethod());
-        assertEquals("PENDING", order.getStatus());
-        assertFalse(order.getIsPaid());
-        assertNotNull(order.getOrderItems());
-        assertNotNull(order.getStatusHistories());
-
+    void testUserAndRestaurantBuilderDefaults() {
         Restaurant restaurant = Restaurant.builder().build();
         assertTrue(restaurant.getIsOpen());
         assertFalse(restaurant.getIsApproved());
@@ -163,6 +136,37 @@ class EntityLifecycleTest {
         assertNotNull(user.getOrderStatusHistories());
         assertNotNull(user.getNotifications());
         assertNotNull(user.getOwnerRequests());
+    }
+
+    @Test
+    void testOrderAndMenuBuilderDefaults() {
+        MenuCategory category = MenuCategory.builder().build();
+        assertEquals(0, category.getSortOrder());
+        assertFalse(category.getIsDeleted());
+
+        MenuItem item = MenuItem.builder().build();
+        assertTrue(item.getIsAvailable());
+        assertFalse(item.getIsDeleted());
+
+        Order order = Order.builder().build();
+        assertEquals(BigDecimal.ZERO, order.getDeliveryFee());
+        assertEquals("COD", order.getPaymentMethod());
+        assertEquals("PENDING", order.getStatus());
+        assertFalse(order.getIsPaid());
+        assertNotNull(order.getOrderItems());
+        assertNotNull(order.getStatusHistories());
+    }
+
+    @Test
+    void testOtherBuilderDefaults() {
+        Address address = Address.builder().build();
+        assertFalse(address.getIsDefault());
+
+        DeliveryAssignment assignment = DeliveryAssignment.builder().build();
+        assertEquals("UNASSIGNED", assignment.getStatus());
+
+        Notification notification = Notification.builder().build();
+        assertFalse(notification.getIsRead());
 
         ShipperLocation loc = ShipperLocation.builder().build();
         assertFalse(loc.getIsOnline());

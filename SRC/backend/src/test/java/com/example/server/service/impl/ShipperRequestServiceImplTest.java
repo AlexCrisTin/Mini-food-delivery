@@ -1,7 +1,6 @@
 package com.example.server.service.impl;
 
 import com.example.server.dto.shipper.ShipperRequestApproval;
-import com.example.server.dto.shipper.ShipperRequestResponse;
 import com.example.server.dto.shipper.ShipperRequestSubmission;
 import com.example.server.entity.ShipperLocation;
 import com.example.server.entity.ShipperRequest;
@@ -132,13 +131,15 @@ class ShipperRequestServiceImplTest {
     @Test
     void shouldThrowExceptionWhenUserNotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> shipperRequestService.submitRequest(userId, new ShipperRequestSubmission()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> shipperRequestService.submitRequest(userId, new ShipperRequestSubmission()));
     }
 
     @Test
     void shouldThrowExceptionWhenRequestNotFound() {
         when(shipperRequestRepository.findById(requestId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> shipperRequestService.processRequest(requestId, new ShipperRequestApproval()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> shipperRequestService.processRequest(requestId, new ShipperRequestApproval()));
     }
 
     @Test

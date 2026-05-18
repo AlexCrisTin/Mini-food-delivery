@@ -25,9 +25,6 @@ import java.math.BigDecimal;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -123,7 +120,8 @@ class DeliveryControllerTest {
 
     @Test
     void shouldUpdateLocationSuccessfully() throws Exception {
-        ShipperLocationUpdateRequest request = new ShipperLocationUpdateRequest(new BigDecimal("10.0"), new BigDecimal("10.0"), true);
+        ShipperLocationUpdateRequest request = new ShipperLocationUpdateRequest(new BigDecimal("10.0"),
+                new BigDecimal("10.0"), true);
 
         mockMvc.perform(put("/api/deliveries/location")
                 .with(user(shipperDetails))
@@ -138,7 +136,7 @@ class DeliveryControllerTest {
         ShipperLocationResponse response = new ShipperLocationResponse();
         response.setLatitude(new BigDecimal("10.0"));
 
-        when(deliveryService.getShipperLocation(eq(1L), eq(1L))).thenReturn(response);
+        when(deliveryService.getShipperLocation(1L, 1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/deliveries/1/location")
                 .with(user(shipperDetails)))
@@ -169,7 +167,7 @@ class DeliveryControllerTest {
         DeliveryAssignmentResponse response = new DeliveryAssignmentResponse();
         response.setId(100L);
 
-        when(deliveryService.getByOrderId(eq(10L), eq(1L))).thenReturn(response);
+        when(deliveryService.getByOrderId(10L, 1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/deliveries/order/10")
                 .with(user(shipperDetails)))

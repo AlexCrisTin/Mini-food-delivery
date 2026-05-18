@@ -27,7 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalTime;
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,167 +42,167 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class RestaurantControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private RestaurantService restaurantService;
+        @MockitoBean
+        private RestaurantService restaurantService;
 
-    @MockitoBean
-    private JwtUtils jwtUtils;
+        @MockitoBean
+        private JwtUtils jwtUtils;
 
-    @MockitoBean
-    private CustomUserDetailsService userDetailsService;
+        @MockitoBean
+        private CustomUserDetailsService userDetailsService;
 
-    @MockitoBean
-    private JwtAuthFilter jwtAuthFilter;
+        @MockitoBean
+        private JwtAuthFilter jwtAuthFilter;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    private CustomUserDetails ownerDetails;
-    private CustomUserDetails customerDetails;
+        private CustomUserDetails ownerDetails;
+        private CustomUserDetails customerDetails;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        ownerDetails = CustomUserDetails.builder()
-                .id(1L)
-                .email("owner@test.com")
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_OWNER")))
-                .build();
+        @BeforeEach
+        void setUp() throws Exception {
+                ownerDetails = CustomUserDetails.builder()
+                                .id(1L)
+                                .email("owner@test.com")
+                                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_OWNER")))
+                                .build();
 
-        customerDetails = CustomUserDetails.builder()
-                .id(2L)
-                .email("customer@test.com")
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER")))
-                .build();
+                customerDetails = CustomUserDetails.builder()
+                                .id(2L)
+                                .email("customer@test.com")
+                                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER")))
+                                .build();
 
-        doAnswer(invocation -> {
-            HttpServletRequest request = invocation.getArgument(0);
-            HttpServletResponse response = invocation.getArgument(1);
-            FilterChain filterChain = invocation.getArgument(2);
-            filterChain.doFilter(request, response);
-            return null;
-        }).when(jwtAuthFilter).doFilter(any(), any(), any());
-    }
+                doAnswer(invocation -> {
+                        HttpServletRequest request = invocation.getArgument(0);
+                        HttpServletResponse response = invocation.getArgument(1);
+                        FilterChain filterChain = invocation.getArgument(2);
+                        filterChain.doFilter(request, response);
+                        return null;
+                }).when(jwtAuthFilter).doFilter(any(), any(), any());
+        }
 
-    @Test
-    void shouldSearchRestaurantsSuccessfully() throws Exception {
-        RestaurantSearchRequest request = new RestaurantSearchRequest();
-        request.setPage(0);
-        request.setSize(10);
+        @Test
+        void shouldSearchRestaurantsSuccessfully() throws Exception {
+                RestaurantSearchRequest request = new RestaurantSearchRequest();
+                request.setPage(0);
+                request.setSize(10);
 
-        PageResponse<RestaurantCardResponse> response = PageResponse.<RestaurantCardResponse>builder()
-                .items(Collections.singletonList(new RestaurantCardResponse()))
-                .build();
+                PageResponse<RestaurantCardResponse> response = PageResponse.<RestaurantCardResponse>builder()
+                                .items(Collections.singletonList(new RestaurantCardResponse()))
+                                .build();
 
-        when(restaurantService.searchRestaurants(any(RestaurantSearchRequest.class))).thenReturn(response);
+                when(restaurantService.searchRestaurants(any(RestaurantSearchRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/restaurants/search")
-                .with(user(customerDetails))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(post("/api/restaurants/search")
+                                .with(user(customerDetails))
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+        }
 
-    @Test
-    void shouldGetRestaurantDetailSuccessfully() throws Exception {
-        RestaurantDetailResponse response = new RestaurantDetailResponse();
-        response.setId(1L);
+        @Test
+        void shouldGetRestaurantDetailSuccessfully() throws Exception {
+                RestaurantDetailResponse response = new RestaurantDetailResponse();
+                response.setId(1L);
 
-        when(restaurantService.getRestaurantDetail(1L)).thenReturn(response);
+                when(restaurantService.getRestaurantDetail(1L)).thenReturn(response);
 
-        mockMvc.perform(get("/api/restaurants/1")
-                .with(user(customerDetails)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L));
-    }
+                mockMvc.perform(get("/api/restaurants/1")
+                                .with(user(customerDetails)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1L));
+        }
 
-    @Test
-    void shouldGetMyRestaurantsAsOwner() throws Exception {
-        when(restaurantService.getMyRestaurants(1L)).thenReturn(Collections.emptyList());
+        @Test
+        void shouldGetMyRestaurantsAsOwner() throws Exception {
+                when(restaurantService.getMyRestaurants(1L)).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/restaurants/my-restaurants")
-                .with(user(ownerDetails)))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(get("/api/restaurants/my-restaurants")
+                                .with(user(ownerDetails)))
+                                .andExpect(status().isOk());
+        }
 
-    @Test
-    void shouldFailToGetMyRestaurantsAsCustomer() throws Exception {
-        mockMvc.perform(get("/api/restaurants/my-restaurants")
-                .with(user(customerDetails)))
-                .andExpect(status().isForbidden());
-    }
+        @Test
+        void shouldFailToGetMyRestaurantsAsCustomer() throws Exception {
+                mockMvc.perform(get("/api/restaurants/my-restaurants")
+                                .with(user(customerDetails)))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void shouldCreateRestaurantAsOwner() throws Exception {
-        RestaurantRequest request = new RestaurantRequest();
-        request.setName("New Res");
-        request.setPhone("123456789");
-        request.setAddress("Addr");
-        request.setCategoryId(1L);
-        request.setOpeningTime(LocalTime.of(8, 0));
-        request.setClosingTime(LocalTime.of(22, 0));
+        @Test
+        void shouldCreateRestaurantAsOwner() throws Exception {
+                RestaurantRequest request = new RestaurantRequest();
+                request.setName("New Res");
+                request.setPhone("123456789");
+                request.setAddress("Addr");
+                request.setCategoryId(1L);
+                request.setOpeningTime(LocalTime.of(8, 0));
+                request.setClosingTime(LocalTime.of(22, 0));
 
-        RestaurantDetailResponse response = new RestaurantDetailResponse();
-        response.setId(10L);
+                RestaurantDetailResponse response = new RestaurantDetailResponse();
+                response.setId(10L);
 
-        when(restaurantService.createRestaurant(eq(1L), any(RestaurantRequest.class))).thenReturn(response);
+                when(restaurantService.createRestaurant(eq(1L), any(RestaurantRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/restaurants")
-                .with(user(ownerDetails))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(10L));
-    }
+                mockMvc.perform(post("/api/restaurants")
+                                .with(user(ownerDetails))
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(10L));
+        }
 
-    @Test
-    void shouldFailToCreateRestaurantAsCustomer() throws Exception {
-        RestaurantRequest request = new RestaurantRequest();
-        request.setName("New Res");
-        request.setPhone("123456789");
-        request.setAddress("Addr");
-        request.setCategoryId(1L);
-        request.setOpeningTime(LocalTime.of(8, 0));
-        request.setClosingTime(LocalTime.of(22, 0));
+        @Test
+        void shouldFailToCreateRestaurantAsCustomer() throws Exception {
+                RestaurantRequest request = new RestaurantRequest();
+                request.setName("New Res");
+                request.setPhone("123456789");
+                request.setAddress("Addr");
+                request.setCategoryId(1L);
+                request.setOpeningTime(LocalTime.of(8, 0));
+                request.setClosingTime(LocalTime.of(22, 0));
 
-        mockMvc.perform(post("/api/restaurants")
-                .with(user(customerDetails))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
-    }
+                mockMvc.perform(post("/api/restaurants")
+                                .with(user(customerDetails))
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void shouldUpdateRestaurantAsOwner() throws Exception {
-        RestaurantRequest request = new RestaurantRequest();
-        request.setName("Updated Res");
-        request.setPhone("123456789");
-        request.setAddress("Addr");
-        request.setCategoryId(1L);
-        request.setOpeningTime(LocalTime.of(8, 0));
-        request.setClosingTime(LocalTime.of(22, 0));
+        @Test
+        void shouldUpdateRestaurantAsOwner() throws Exception {
+                RestaurantRequest request = new RestaurantRequest();
+                request.setName("Updated Res");
+                request.setPhone("123456789");
+                request.setAddress("Addr");
+                request.setCategoryId(1L);
+                request.setOpeningTime(LocalTime.of(8, 0));
+                request.setClosingTime(LocalTime.of(22, 0));
 
-        when(restaurantService.updateRestaurant(eq(1L), eq(10L), any(RestaurantRequest.class)))
-                .thenReturn(new RestaurantDetailResponse());
+                when(restaurantService.updateRestaurant(eq(1L), eq(10L), any(RestaurantRequest.class)))
+                                .thenReturn(new RestaurantDetailResponse());
 
-        mockMvc.perform(put("/api/restaurants/10")
-                .with(user(ownerDetails))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(put("/api/restaurants/10")
+                                .with(user(ownerDetails))
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+        }
 
-    @Test
-    void shouldDeleteRestaurantAsOwner() throws Exception {
-        mockMvc.perform(delete("/api/restaurants/10")
-                .with(user(ownerDetails))
-                .with(csrf()))
-                .andExpect(status().isNoContent());
-    }
+        @Test
+        void shouldDeleteRestaurantAsOwner() throws Exception {
+                mockMvc.perform(delete("/api/restaurants/10")
+                                .with(user(ownerDetails))
+                                .with(csrf()))
+                                .andExpect(status().isNoContent());
+        }
 }
