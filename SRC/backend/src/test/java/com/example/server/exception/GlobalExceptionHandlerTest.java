@@ -88,6 +88,38 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void shouldHandleAppExceptionWithNullStatus() {
+        // Arrange
+        AppException ex = new AppException(null, "Business error", "BUSINESS_ERROR");
+
+        // Act
+        ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleAppException(ex);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Business error", response.getBody().getMessage());
+        assertEquals("BUSINESS_ERROR", response.getBody().getErrorCode());
+    }
+
+    @Test
+    void shouldHandleDataIntegrityViolation() {
+        // Arrange
+        org.springframework.dao.DataIntegrityViolationException ex = new org.springframework.dao.DataIntegrityViolationException("constraint violation");
+
+        // Act
+        ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleDataIntegrityViolation(ex);
+
+        // Assert
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Database constraint violation"));
+        assertEquals("DATABASE_ERROR", response.getBody().getErrorCode());
+    }
+
+    @Test
     void shouldHandleGlobalException() {
         // Arrange
         Exception ex = new RuntimeException("Unexpected error");

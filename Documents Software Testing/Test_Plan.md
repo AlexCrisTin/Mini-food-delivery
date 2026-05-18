@@ -78,17 +78,20 @@ This document outlines the comprehensive testing strategy for the Mini Food Deli
 
 ## 8. Testing Roadmap
 
-### 8.1. Phase 2: Coverage Depth (ACHIEVED 2026-05-17)
-*   **Target:** 100% coverage for Core Services and Controllers.
-*   **Result:** All gaps closed, including WebSockets, Owner/Admin workflows, and Entity lifecycle hooks. Total backend tests: 279.
+### 8.1. Phase 2: Coverage Depth (ACHIEVED 2026-05-18)
+
+- **Target:** 100% coverage for Core Services and Controllers.
+
+- **Result:** All gaps closed, noisy tests pruned to focus on business logic. Total backend tests: 281.
 
 ### 8.2. Phase 3: Production Readiness (Upcoming)
-*   **Priority 1: Performance & Stress Testing**
-    *   Target: `OrderRepository` (Haversine queries), `MapService` (Rate limiting fallback).
-    *   Method: JMeter or Gatling to simulate high concurrent order volume.
-*   **Priority 2: Security Hardening**
-    *   Focus: Penetration testing for JWT hijacking, CSRF bypass in WebSockets, and advanced SQL injection (beyond JPA protection).
-*   **Priority 3: Reliability Engineering**
-    *   Target: Multi-service failure scenarios (Circuit Breaking simulation).
-    *   Method: Chaos Engineering (e.g., stopping the Docker DB during an active transaction).
 
+- **Priority 1: Performance & Stress Testing**
+  - Target: `OrderRepository` (Haversine queries), `MapService` (Rate limiting fallback).
+  - Method: JMeter or Gatling to simulate high concurrent order volume.
+
+- **Priority 2: Security Hardening**
+  - Focus: Penetration testing for JWT hijacking, CSRF bypass in WebSockets, and advanced SQL injection (beyond JPA protection).
+- **Priority 3: Reliability Engineering**
+  - Target: Multi-service failure scenarios (Circuit Breaking simulation).
+  - Method: Chaos Engineering (e.g., stopping the Docker DB during an active transaction).
