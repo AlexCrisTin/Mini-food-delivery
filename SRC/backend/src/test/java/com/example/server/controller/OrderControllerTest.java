@@ -99,13 +99,13 @@ class OrderControllerTest {
     @Test
     void shouldGetOrderSummarySuccessfully() throws Exception {
         Long orderId = 1L;
-        when(orderService.getOrderSummary(eq(orderId), eq(1L))).thenReturn(new OrderSummaryResponse());
+        when(orderService.getOrderSummary((orderId), eq(1L))).thenReturn(new OrderSummaryResponse());
 
         mockMvc.perform(get("/api/orders/{id}", orderId)
                 .with(user(customerDetails)))
                 .andExpect(status().isOk());
 
-        verify(orderService).getOrderSummary(eq(orderId), eq(1L));
+        verify(orderService).getOrderSummary((orderId), eq(1L));
     }
 
     @Test

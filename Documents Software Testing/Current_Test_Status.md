@@ -5,12 +5,12 @@
 - **Test Framework**: JUnit 5, Mockito, Spring Boot Test
 - **Infrastructure**: Testcontainers (MySQL 8.0)
 - **Coverage Tool**: JaCoCo
-- **Total Tests**: 279
-- **Pass Rate**: 100% (279/279)
+- **Total Tests**: 281
+- **Pass Rate**: 100% (281/281)
 
 ## Coverage Analysis (Summary)
 
-Based on the latest JaCoCo report (2026-05-17):
+Based on the latest JaCoCo report (2026-05-18):
 
 ### High Coverage (> 95% Instructions)
 
@@ -19,6 +19,7 @@ Based on the latest JaCoCo report (2026-05-17):
 - `Controllers`: `UserController` (100%), `RestaurantController` (100%), `ShipperRequestController` (100%), `AuthController` (100%), `DeliveryController` (100%), `MenuController` (100%), `AdminController` (100%), `OwnerRequestController` (100%), `LocationWebSocketController` (100%)
 - `Entities`: All entities achieve 100% coverage via lifecycle and builder tests.
 - `Listeners`: `OrderEventListener` (100%)
+- `Mappers`: Trivial tests verifying MapStruct generated getters/setters have been intentionally pruned. Coverage now reflects true business logic verification.
 - `Config`: `WebConfig`, `MapClientConfig`, `WebSocketConfig`, `OpenApiConfig`
 
 ## Backend Existing Test Suites
@@ -86,13 +87,13 @@ Based on the latest JaCoCo report (2026-05-17):
 
 ## Gaps Identified (Resolved)
 
-1.  **Real-time Logic**: `LocationWebSocketController` is now 100% tested.
-2.  **Edge Case Scenarios**: All service branches (null returns, error conditions) are covered.
-3.  **Entity Defaults**: Lombok defaults and lifecycle hooks are verified.
+1. **Real-time Logic**: `LocationWebSocketController` is now 100% tested.
+2. **Edge Case Scenarios**: All service branches (null returns, error conditions) are covered.
+3. **Entity Defaults**: Lombok defaults and lifecycle hooks are verified.
 
 ## Coverage Targets (Phase 2) - ACHIEVED
 
-*   **Overall Instructions**: > 75% (Current: ~98%)
-*   **Core Services (Business Logic)**: > 85% (Current: 100%)
-*   **Controllers (API Contracts)**: > 60% (Current: 100%)
-*   **Security Layer**: > 90% (Current: 100%)
+- **Overall Instructions**: > 75% (Current: ~98%)
+- **Core Services (Business Logic)**: > 85% (Current: 100%)
+- **Controllers (API Contracts)**: > 60% (Current: 100%)
+- **Security Layer**: > 90% (Current: 100%)

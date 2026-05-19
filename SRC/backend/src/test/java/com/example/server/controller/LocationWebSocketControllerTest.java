@@ -70,7 +70,7 @@ class LocationWebSocketControllerTest {
         controller.handleShipperLocation(locationDTO, principal);
 
         verify(shipperLocationRepository).save(any(ShipperLocation.class));
-        verify(messagingTemplate).convertAndSend(eq("/topic/order/100"), eq(locationDTO));
+        verify(messagingTemplate).convertAndSend(("/topic/order/100"), eq(locationDTO));
     }
 
     @Test

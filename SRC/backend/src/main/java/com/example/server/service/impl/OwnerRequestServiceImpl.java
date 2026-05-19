@@ -10,6 +10,7 @@ import com.example.server.enums.OwnerRequestStatus;
 import com.example.server.enums.Role;
 import com.example.server.exception.AppException;
 import com.example.server.exception.ResourceNotFoundException;
+import com.example.server.mapper.OwnerRequestMapper;
 import com.example.server.repository.OwnerRequestRepository;
 import com.example.server.repository.RestaurantRepository;
 import com.example.server.repository.UserRepository;
@@ -30,6 +31,7 @@ public class OwnerRequestServiceImpl implements OwnerRequestService {
     private final OwnerRequestRepository ownerRequestRepository;
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
+    private final OwnerRequestMapper ownerRequestMapper;
 
     @Override
     @Transactional
@@ -55,20 +57,20 @@ public class OwnerRequestServiceImpl implements OwnerRequestService {
                 .status(OwnerRequestStatus.PENDING)
                 .build();
 
-        return mapToResponse(ownerRequestRepository.save(ownerRequest));
+        return ownerRequestMapper.toResponse(ownerRequestRepository.save(ownerRequest));
     }
 
     @Override
     public List<OwnerRequestResponse> getUserRequests(Long userId) {
         return ownerRequestRepository.findByUserId(userId).stream()
-                .map(this::mapToResponse)
+                .map(ownerRequestMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<OwnerRequestResponse> getAllPendingRequests() {
         return ownerRequestRepository.findByStatus(OwnerRequestStatus.PENDING).stream()
-                .map(this::mapToResponse)
+                .map(ownerRequestMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +92,7 @@ public class OwnerRequestServiceImpl implements OwnerRequestService {
         }
 
         request.setAdminNote(approval.getAdminNote());
-        return mapToResponse(ownerRequestRepository.save(request));
+        return ownerRequestMapper.toResponse(ownerRequestRepository.save(request));
     }
 
     private void promoteToOwner(OwnerRequest request) {
@@ -114,21 +116,5 @@ public class OwnerRequestServiceImpl implements OwnerRequestService {
         restaurant.setIsOpen(true);
         
         restaurantRepository.save(restaurant);
-    }
-
-    private OwnerRequestResponse mapToResponse(OwnerRequest request) {
-        return OwnerRequestResponse.builder()
-                .id(request.getId())
-                .userId(request.getUser().getId())
-                .userEmail(request.getUser().getEmail())
-                .restaurantName(request.getRestaurantName())
-                .restaurantAddress(request.getRestaurantAddress())
-                .restaurantPhone(request.getRestaurantPhone())
-                .description(request.getDescription())
-                .status(request.getStatus())
-                .adminNote(request.getAdminNote())
-                .createdAt(request.getCreatedAt())
-                .updatedAt(request.getUpdatedAt())
-                .build();
     }
 }

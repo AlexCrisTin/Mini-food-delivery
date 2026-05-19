@@ -58,7 +58,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldHandleAccessDenied() {
         // Arrange
-        org.springframework.security.access.AccessDeniedException ex = new org.springframework.security.access.AccessDeniedException("Access denied");
+        org.springframework.security.access.AccessDeniedException ex = new org.springframework.security.access.AccessDeniedException(
+                "Access denied");
 
         // Act
         ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleAccessDenied(ex);
@@ -74,7 +75,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldHandleOptimisticLockingFailure() {
         // Arrange
-        org.springframework.orm.ObjectOptimisticLockingFailureException ex = new org.springframework.orm.ObjectOptimisticLockingFailureException("concurrency", new RuntimeException());
+        org.springframework.orm.ObjectOptimisticLockingFailureException ex = new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                "concurrency", new RuntimeException());
 
         // Act
         ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleOptimisticLockingFailure(ex);
@@ -85,6 +87,39 @@ class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().isSuccess());
         assertTrue(response.getBody().getMessage().contains("modified by another user"));
         assertEquals("CONCURRENCY_FAILURE", response.getBody().getErrorCode());
+    }
+
+    @Test
+    void shouldHandleAppExceptionWithNullStatus() {
+        // Arrange
+        AppException ex = new AppException(null, "Business error", "BUSINESS_ERROR");
+
+        // Act
+        ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleAppException(ex);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Business error", response.getBody().getMessage());
+        assertEquals("BUSINESS_ERROR", response.getBody().getErrorCode());
+    }
+
+    @Test
+    void shouldHandleDataIntegrityViolation() {
+        // Arrange
+        org.springframework.dao.DataIntegrityViolationException ex = new org.springframework.dao.DataIntegrityViolationException(
+                "constraint violation");
+
+        // Act
+        ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleDataIntegrityViolation(ex);
+
+        // Assert
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("Database constraint violation"));
+        assertEquals("DATABASE_ERROR", response.getBody().getErrorCode());
     }
 
     @Test
@@ -109,7 +144,7 @@ class GlobalExceptionHandlerTest {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);
         FieldError fieldError = new FieldError("object", "field", "must not be null");
-        
+
         when(ex.getBindingResult()).thenReturn(bindingResult);
         when(bindingResult.getAllErrors()).thenReturn(List.of(fieldError));
 

@@ -1,7 +1,6 @@
 package com.example.server.service.impl;
 
 import com.example.server.dto.shipper.ShipperRequestApproval;
-import com.example.server.dto.shipper.ShipperRequestResponse;
 import com.example.server.dto.shipper.ShipperRequestSubmission;
 import com.example.server.entity.ShipperLocation;
 import com.example.server.entity.ShipperRequest;
@@ -10,14 +9,17 @@ import com.example.server.enums.Role;
 import com.example.server.enums.ShipperRequestStatus;
 import com.example.server.exception.AppException;
 import com.example.server.exception.ResourceNotFoundException;
+import com.example.server.mapper.ShipperRequestMapper;
 import com.example.server.repository.ShipperLocationRepository;
 import com.example.server.repository.ShipperRequestRepository;
 import com.example.server.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
@@ -36,6 +38,9 @@ class ShipperRequestServiceImplTest {
     private UserRepository userRepository;
     @Mock
     private ShipperLocationRepository shipperLocationRepository;
+
+    @Spy
+    private ShipperRequestMapper shipperRequestMapper = Mappers.getMapper(ShipperRequestMapper.class);
 
     @InjectMocks
     private ShipperRequestServiceImpl shipperRequestService;
@@ -126,13 +131,15 @@ class ShipperRequestServiceImplTest {
     @Test
     void shouldThrowExceptionWhenUserNotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> shipperRequestService.submitRequest(userId, new ShipperRequestSubmission()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> shipperRequestService.submitRequest(userId, new ShipperRequestSubmission()));
     }
 
     @Test
     void shouldThrowExceptionWhenRequestNotFound() {
         when(shipperRequestRepository.findById(requestId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> shipperRequestService.processRequest(requestId, new ShipperRequestApproval()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> shipperRequestService.processRequest(requestId, new ShipperRequestApproval()));
     }
 
     @Test

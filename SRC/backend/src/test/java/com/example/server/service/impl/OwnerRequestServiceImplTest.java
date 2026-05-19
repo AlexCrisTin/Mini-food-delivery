@@ -1,7 +1,6 @@
 package com.example.server.service.impl;
 
 import com.example.server.dto.owner.OwnerRequestApproval;
-import com.example.server.dto.owner.OwnerRequestResponse;
 import com.example.server.dto.owner.OwnerRequestSubmission;
 import com.example.server.entity.OwnerRequest;
 import com.example.server.entity.Restaurant;
@@ -10,14 +9,17 @@ import com.example.server.enums.OwnerRequestStatus;
 import com.example.server.enums.Role;
 import com.example.server.exception.AppException;
 import com.example.server.exception.ResourceNotFoundException;
+import com.example.server.mapper.OwnerRequestMapper;
 import com.example.server.repository.OwnerRequestRepository;
 import com.example.server.repository.RestaurantRepository;
 import com.example.server.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
@@ -36,6 +38,9 @@ class OwnerRequestServiceImplTest {
     private UserRepository userRepository;
     @Mock
     private RestaurantRepository restaurantRepository;
+
+    @Spy
+    private OwnerRequestMapper ownerRequestMapper = Mappers.getMapper(OwnerRequestMapper.class);
 
     @InjectMocks
     private OwnerRequestServiceImpl ownerRequestService;
@@ -123,13 +128,15 @@ class OwnerRequestServiceImplTest {
     @Test
     void shouldThrowExceptionWhenUserNotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> ownerRequestService.submitRequest(userId, new OwnerRequestSubmission()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> ownerRequestService.submitRequest(userId, new OwnerRequestSubmission()));
     }
 
     @Test
     void shouldThrowExceptionWhenRequestNotFound() {
         when(ownerRequestRepository.findById(requestId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> ownerRequestService.processRequest(requestId, new OwnerRequestApproval()));
+        assertThrowsExactly(ResourceNotFoundException.class,
+                () -> ownerRequestService.processRequest(requestId, new OwnerRequestApproval()));
     }
 
     @Test
