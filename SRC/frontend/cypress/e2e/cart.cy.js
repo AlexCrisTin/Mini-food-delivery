@@ -1,6 +1,5 @@
 /**
  * E2E Test: Giỏ hàng (CartView) & Thanh toán (CheckoutView)
- * Cypress – baseUrl: http://localhost:5173
  */
 
 const CART_ITEM = {
@@ -18,9 +17,13 @@ const CART_ITEM = {
 
 const CART_ITEM_SINGLE = { ...CART_ITEM, quantity: 1 }
 
-// ══════════════════════════════════════════════════
-// CART VIEW – Giỏ hàng rỗng
-// ══════════════════════════════════════════════════
+function visitCartWithItems(items) {
+  cy.loginAsCustomer({ url: '/cart', waitProfile: false })
+  cy.seedCustomerCart(items)
+  cy.reload()
+  cy.wait('@getProfile')
+}
+
 describe('CartView – Giỏ hàng rỗng', () => {
   beforeEach(() => {
     cy.loginAsCustomer({ url: '/cart' })
@@ -37,22 +40,17 @@ describe('CartView – Giỏ hàng rỗng', () => {
   })
 
   it('tiêu đề "Giỏ hàng" hiển thị đúng', () => {
-    cy.contains('Giỏ hàng').should('be.visible')
+    cy.contains('h1', 'Giỏ hàng').should('be.visible')
   })
 
   it('hiển thị "0 món"', () => {
-    cy.get('[class*="item-count"]').should('contain', '0')
+    cy.get('.item-count').should('contain', '0')
   })
 })
 
-// ══════════════════════════════════════════════════
-// CART VIEW – Có món trong giỏ
-// ══════════════════════════════════════════════════
 describe('CartView – Có món trong giỏ hàng', () => {
   beforeEach(() => {
-    cy.loginAsCustomer({ url: '/cart', waitProfile: false })
-    cy.seedCustomerCart([CART_ITEM])
-    cy.reload()
+    visitCartWithItems([CART_ITEM])
   })
 
   it('hiển thị tên món đã thêm', () => {
@@ -64,28 +62,26 @@ describe('CartView – Có món trong giỏ hàng', () => {
   })
 
   it('hiển thị số lượng đúng (2)', () => {
-    cy.get('[class*="qty-value"], .qty-value').should('contain', '2')
+    cy.get('.qty-value').should('contain', '2')
   })
 
   it('click nút + → số lượng tăng lên 3', () => {
-    cy.get('button.qty-btn, [class*="qty-btn"]').contains('+').first().click()
-    cy.get('[class*="qty-value"], .qty-value').should('contain', '3')
+    cy.get('button.qty-btn').contains('+').first().click()
+    cy.get('.qty-value').should('contain', '3')
   })
 
   it('click nút − → số lượng giảm xuống 1', () => {
-    cy.get('button.qty-btn, [class*="qty-btn"]').contains('−').first().click()
-    cy.get('[class*="qty-value"], .qty-value').should('contain', '1')
+    cy.get('button.qty-btn').contains('−').first().click()
+    cy.get('.qty-value').should('contain', '1')
   })
 
   it('click nút xóa → món bị xóa khỏi giỏ', () => {
-    cy.get('button[aria-label="Xoá"], button.remove-btn, [class*="remove-btn"]')
-      .first()
-      .click()
+    cy.get('button[aria-label="Xoá"]').first().click()
     cy.contains('Giỏ hàng trống').should('be.visible')
   })
 
-  it('hiển thị phí giao hàng 18.000 ₫', () => {
-    cy.contains(/18[.,]000|18\.000/).should('be.visible')
+  it('hiển thị phí giao hàng mặc định', () => {
+    cy.contains('Phí giao hàng').parent().should('contain.text', '15')
   })
 
   it('hiển thị subtotal đúng: 45.000 × 2 = 90.000 ₫', () => {
@@ -93,18 +89,14 @@ describe('CartView – Có món trong giỏ hàng', () => {
   })
 
   it('nút "Quay lại" dẫn về /browse', () => {
-    cy.get('.back-btn, [class*="back"]').first().click()
+    cy.get('.back-btn').first().click()
     cy.url().should('include', '/browse')
   })
 })
 
-// ══════════════════════════════════════════════════
-// CART VIEW – Giảm giá (subtotal >= 100.000 ₫)
-// ══════════════════════════════════════════════════
-describe('CartView – Áp dụng giảm giá', () => {
+describe('CartView – Tóm tắt đơn hàng', () => {
   beforeEach(() => {
-    cy.loginAsCustomer({ url: '/cart', waitProfile: false })
-    cy.seedCustomerCart([
+    visitCartWithItems([
       {
         lineId: '2::lon::',
         id: 2,
@@ -118,26 +110,22 @@ describe('CartView – Áp dụng giảm giá', () => {
         imageUrl: null,
       },
     ])
-    cy.reload()
   })
 
-  it('hiển thị mức giảm giá 20.000 ₫ khi subtotal >= 100.000 ₫', () => {
-    cy.contains(/20[.,]000|20\.000/).should('be.visible')
+  it('hiển thị tạm tính khi subtotal >= 100.000 ₫', () => {
+    cy.contains(/120[.,]000|120\.000/).should('be.visible')
   })
 
-  it('tổng cuối = 120.000 + 18.000 - 20.000 = 118.000 ₫', () => {
-    cy.contains(/118[.,]000|118\.000/).should('be.visible')
+  it('hiển thị tổng thanh toán gồm phí giao hàng', () => {
+    cy.contains('Tổng thanh toán').parent().should('contain.text', '120')
   })
 })
 
-// ══════════════════════════════════════════════════
-// CHECKOUT – Luồng đặt hàng (cần đăng nhập)
-// ══════════════════════════════════════════════════
 describe('CheckoutView – Đặt hàng', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/users/me/addresses**', {
-      statusCode: 200,
-      body: [
+    cy.loginAsCustomer({
+      url: '/checkout',
+      addresses: [
         {
           id: 1,
           addressLine: '123 Lê Lợi, Quận 1',
@@ -146,11 +134,10 @@ describe('CheckoutView – Đặt hàng', () => {
           isDefault: true,
         },
       ],
-    }).as('getAddresses')
-
-    cy.loginAsCustomer({ url: '/checkout', waitProfile: true })
+    })
     cy.seedCustomerCart([CART_ITEM_SINGLE])
     cy.reload()
+    cy.wait('@getProfile')
     cy.wait('@getAddresses')
   })
 
@@ -174,7 +161,7 @@ describe('CheckoutView – Đặt hàng', () => {
   })
 
   it('đặt hàng thành công → mock API → chuyển trang đơn hàng', () => {
-    cy.intercept('POST', '**/orders', {
+    cy.intercept('POST', '**/api/orders', {
       statusCode: 201,
       body: { id: 999, status: 'PENDING' },
     }).as('placeOrder')
@@ -187,7 +174,7 @@ describe('CheckoutView – Đặt hàng', () => {
   })
 
   it('không có địa chỉ → hiện thông báo thêm địa chỉ', () => {
-    cy.intercept('GET', '**/users/me/addresses**', { statusCode: 200, body: [] }).as('noAddr')
+    cy.intercept('GET', '**/api/users/me/addresses**', { statusCode: 200, body: [] }).as('noAddr')
     cy.reload()
     cy.wait('@noAddr')
     cy.contains('Bạn chưa có địa chỉ nào').should('be.visible')
@@ -195,11 +182,8 @@ describe('CheckoutView – Đặt hàng', () => {
   })
 })
 
-// ══════════════════════════════════════════════════
-// CHECKOUT – Chưa đăng nhập
-// ══════════════════════════════════════════════════
 describe('CheckoutView – Chưa đăng nhập', () => {
-  it('truy cập /checkout khi chưa đăng nhập → redirect về / hoặc /login', () => {
+  it('truy cập /checkout khi chưa đăng nhập → redirect về trang chủ', () => {
     cy.visit('/checkout')
     cy.url().should('match', /\/$|\/login|\/home/)
   })

@@ -34,17 +34,11 @@ const mockOrderDetail = {
 
 describe('Lịch sử đơn hàng', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/orders/history', {
-      statusCode: 200,
-      body: mockOrders,
-    }).as('getOrderHistory')
-
-    cy.loginAsCustomer({ url: '/orders/history' })
-    cy.wait('@getOrderHistory')
+    cy.loginAsCustomer({ url: '/orders/history', orders: mockOrders })
   })
 
   it('hiển thị tiêu đề trang', () => {
-    cy.contains('Lịch sử đơn hàng').should('be.visible')
+    cy.contains('h1', 'Lịch sử đơn hàng').should('be.visible')
   })
 
   it('hiển thị danh sách đơn từ API', () => {
@@ -59,17 +53,12 @@ describe('Lịch sử đơn hàng', () => {
 
 describe('Theo dõi đơn hàng', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/orders/502', {
+    cy.intercept('GET', '**/api/orders/502', {
       statusCode: 200,
       body: mockOrderDetail,
     }).as('getOrder')
 
-    cy.intercept('GET', '**/restaurants/2/menu**', {
-      statusCode: 200,
-      body: [],
-    })
-
-    cy.loginAsCustomer({ url: '/orders/502/tracking', waitProfile: true })
+    cy.loginAsCustomer({ url: '/orders/502/tracking' })
     cy.wait('@getOrder')
   })
 
@@ -88,7 +77,7 @@ describe('Theo dõi đơn hàng', () => {
 
 describe('Theo dõi đơn – Đơn đã hủy', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/orders/503', {
+    cy.intercept('GET', '**/api/orders/503', {
       statusCode: 200,
       body: { ...mockOrderDetail, id: 503, status: 'CANCELLED' },
     }).as('getCancelled')

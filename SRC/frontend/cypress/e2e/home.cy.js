@@ -1,6 +1,5 @@
 /**
  * E2E Test: Trang chủ (HomeView)
- * Cypress – baseUrl: http://localhost:5173
  */
 
 describe('Trang chủ – Hiển thị giao diện', () => {
@@ -21,7 +20,7 @@ describe('Trang chủ – Hiển thị giao diện', () => {
   })
 
   it('có nút "Đăng nhập" trên nav', () => {
-    cy.contains('Đăng nhập').should('be.visible')
+    cy.get('.hero-nav .login-btn').should('be.visible')
   })
 
   it('có khu vực hero section', () => {
@@ -44,39 +43,36 @@ describe('Trang chủ – Modal Đăng nhập / Đăng ký', () => {
   })
 
   it('click "Đăng nhập" → modal hiện ra', () => {
-    cy.contains('Đăng nhập').first().click()
-    cy.get('[class*="modal"], [class*="auth"], [class*="login"]').should('be.visible')
+    cy.get('.hero-nav .login-btn').click()
+    cy.get('.login-panel.auth-dialog').should('be.visible')
   })
 
   it('modal có ô nhập Email', () => {
-    cy.contains('Đăng nhập').first().click()
-    cy.get('input[type="email"], input[placeholder*="mail" i]').should('be.visible')
+    cy.openAuthModal()
+    cy.get('.auth-col--login input[type="email"]').should('be.visible')
   })
 
   it('modal có ô nhập Mật khẩu', () => {
-    cy.contains('Đăng nhập').first().click()
-    cy.get('input[type="password"]').should('be.visible')
+    cy.openAuthModal()
+    cy.get('.auth-col--login input[type="password"]').should('be.visible')
   })
 
   it('chuyển sang tab "Đăng ký" trong modal', () => {
-    cy.contains('Đăng nhập').first().click()
-    cy.contains('Đăng ký').click()
-    cy.get('input[placeholder*="họ tên" i], input[placeholder*="fullname" i], input[placeholder*="tên" i]')
-      .should('be.visible')
+    cy.openAuthModal()
+    cy.openRegisterPanel()
+    cy.get('.auth-col--register input[name="fullName"]').should('be.visible')
   })
 
   it('đóng modal bằng nút X → modal biến mất', () => {
-    cy.contains('Đăng nhập').first().click()
-    cy.get('[class*="close"], [aria-label*="đóng" i], [aria-label*="close" i]').first().click()
-    cy.get('[class*="modal"]').should('not.be.visible')
+    cy.openAuthModal()
+    cy.get('.login-close').click()
+    cy.get('.login-overlay').should('not.exist')
   })
 
   it('submit form đăng nhập rỗng → không chuyển trang', () => {
-    cy.contains('Đăng nhập').first().click()
-    cy.get('form button[type="submit"], [class*="login-btn"], button[class*="submit"]')
-      .first()
-      .click()
-    cy.url().should('include', '/')
+    cy.openAuthModal()
+    cy.get('.auth-col--login .login-submit').click()
+    cy.url().should('match', /\/$/)
   })
 })
 
@@ -86,13 +82,13 @@ describe('Trang chủ – Điều hướng', () => {
   })
 
   it('click logo → vẫn ở trang chủ', () => {
-    cy.get('.brand, [class*="brand"], [class*="logo"]').first().click()
+    cy.get('.brand').first().click()
     cy.url().should('match', /\/$|\/home/)
   })
 
   it('nút "Bắt đầu ngay" mở modal đăng nhập', () => {
     cy.contains('button', 'Bắt đầu ngay').click()
-    cy.get('input[type="email"]').should('be.visible')
-    cy.get('input[type="password"]').should('be.visible')
+    cy.get('.auth-col--login input[type="email"]').should('be.visible')
+    cy.get('.auth-col--login input[type="password"]').should('be.visible')
   })
 })
