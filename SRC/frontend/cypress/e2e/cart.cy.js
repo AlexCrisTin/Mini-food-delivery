@@ -18,9 +18,17 @@ const CART_ITEM = {
 const CART_ITEM_SINGLE = { ...CART_ITEM, quantity: 1 }
 
 function visitCartWithItems(items) {
-  cy.loginAsCustomer({ url: '/cart', waitProfile: false })
-  cy.seedCustomerCart(items)
-  cy.reload()
+  const token = 'mock-jwt-customer'
+  cy.mockCustomerSession({})
+  cy.mockBrowseData({})
+  cy.mockCartPricingApis(10)
+
+  cy.visit('/cart', {
+    onBeforeLoad(win) {
+      win.localStorage.setItem('token', token)
+      win.localStorage.setItem('cart_items_1', JSON.stringify({ items, note: '' }))
+    },
+  })
   cy.wait('@getProfile')
 }
 

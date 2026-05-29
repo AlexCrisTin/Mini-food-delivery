@@ -69,21 +69,19 @@ Based on the latest JaCoCo report (2026-05-18):
 
 ## Frontend Existing Test Suites (`SRC/frontend/src/__tests__/`)
 
-### Unit/Component Tests (Vitest)
+Detailed frontend test case parameters are fully documented under:
+*   [Test_Cases_Frontend.md](Test_Cases_Frontend.md) (Master Frontend Test Cases Index)
 
-- `auth.spec.js`: Authentication logic and state management.
-- `cart.spec.js`: Cart operations and calculations.
-- `CartView.spec.js`: Component rendering for the cart.
-- `formatters.spec.js`: Date, currency, and address formatting.
-- `pricingUtils.spec.js`: Delivery fee and total calculation logic.
-- `validators.spec.js`: Form validation rules.
+### Unit/Component Tests (Vitest) — [Detailed Unit Specs](frontend/ViewsTest.md)
+*   [AuthStoreTest.md](frontend/AuthStoreTest.md): Authentication logic and state management (`auth.spec.js`).
+*   [CartStoreTest.md](frontend/CartStoreTest.md): Cart operations and calculations (`cart.spec.js`).
+*   [OrderStoreTest.md](frontend/OrderStoreTest.md): Order status changes (`order.spec.js`).
+*   [NotificationStoreTest.md](frontend/NotificationStoreTest.md): Global toast manager (`notification.spec.js`).
+*   [ViewsTest.md](frontend/ViewsTest.md): Component rendering specs (`CartView.spec.js`, `NotFoundView.spec.js`, `OrderHistory.spec.js`).
+*   [UtilsTest.md](frontend/UtilsTest.md): Comprehensive functional helpers (`validators.spec.js`, `formatters.spec.js`, `pricingUtils.spec.js`, `browseViewUtils.spec.js`, etc.).
 
-### E2E/Integration Tests (Cypress)
-
-- `auth.cy.js`: Login/Registration flows.
-- `browse.cy.js`: Restaurant browsing and filtering.
-- `cart.cy.js`: Adding items and cart persistence.
-- `home.cy.js`: Landing page interactions.
+### E2E/Integration Tests (Cypress) — [Detailed E2E Specs](frontend/E2ETest.md)
+*   [E2ETest.md](frontend/E2ETest.md): Full user journeys covering signup/login (`auth.cy.js`), search & filters (`browse.cy.js`), checkout calculations (`cart.cy.js`), landing views (`home.cy.js`), 404 boundaries (`not-found.cy.js`), and order history (`orders.cy.js`).
 
 ## Gaps Identified (Resolved)
 
