@@ -1,0 +1,136 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="shdLg4fjijzM7o4AaOhp">
+    <mxGraphModel dx="1373" dy="703" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="OndfssaP5NTw4JpoyqYr-184" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Khách hàng" vertex="1">
+          <mxGeometry height="60" width="120" x="270" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-185" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Shipper" vertex="1">
+          <mxGeometry height="60" width="120" x="580" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-187" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Admin" vertex="1">
+          <mxGeometry height="60" width="120" x="740" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-188" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Nhà hàng" vertex="1">
+          <mxGeometry height="60" width="120" x="425" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-189" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="140" width="590" x="270" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-190" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="CustomerController" vertex="1">
+          <mxGeometry height="60" width="120" x="300" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-191" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Tầng trình bày (Presentation Layer)" vertex="1">
+          <mxGeometry height="30" width="220" x="455" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-192" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="RestaurantController" vertex="1">
+          <mxGeometry height="60" width="120" x="435" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-193" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="ShipperController" vertex="1">
+          <mxGeometry height="60" width="120" x="570" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-194" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="AdminController" vertex="1">
+          <mxGeometry height="60" width="120" x="710" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-195" edge="1" parent="1" source="OndfssaP5NTw4JpoyqYr-184" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="OndfssaP5NTw4JpoyqYr-189" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="550" y="610" as="sourcePoint" />
+            <mxPoint x="600" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-196" edge="1" parent="1" source="OndfssaP5NTw4JpoyqYr-188" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.138;entryY=-0.075;entryDx=0;entryDy=0;entryPerimeter=0;" target="OndfssaP5NTw4JpoyqYr-191" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="570" y="500" as="sourcePoint" />
+            <mxPoint x="620" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-197" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.138;entryY=-0.075;entryDx=0;entryDy=0;entryPerimeter=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="639.6" y="360" as="sourcePoint" />
+            <mxPoint x="639.6" y="408" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-198" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="OndfssaP5NTw4JpoyqYr-189" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="800" y="360" as="sourcePoint" />
+            <mxPoint x="898" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-200" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="140" width="590" x="270" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-201" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="OrderService" vertex="1">
+          <mxGeometry height="60" width="120" x="280" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-202" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Tầng nghiệp vụ (Business Logic Layer)" vertex="1">
+          <mxGeometry height="30" width="220" x="455" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-203" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="UserService" vertex="1">
+          <mxGeometry height="60" width="120" x="410" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-204" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="DeliveryService" vertex="1">
+          <mxGeometry height="60" width="110" x="540" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-205" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="NotificationService" vertex="1">
+          <mxGeometry height="60" width="110" x="660" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-206" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="MapService" vertex="1">
+          <mxGeometry height="60" width="70" x="780" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-207" edge="1" parent="1" source="OndfssaP5NTw4JpoyqYr-189" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="OndfssaP5NTw4JpoyqYr-202" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="610" y="510" as="sourcePoint" />
+            <mxPoint x="660" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-209" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="140" width="590" x="270" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-210" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="OrderRepository" vertex="1">
+          <mxGeometry height="60" width="120" x="280" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-211" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Tầng truy cập dữ liệu (Data Access Layer)" vertex="1">
+          <mxGeometry height="30" width="235" x="447.5" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-212" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="UserRepository" vertex="1">
+          <mxGeometry height="60" width="120" x="425" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-213" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="RestaurantRepository" vertex="1">
+          <mxGeometry height="60" width="130" x="575" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-214" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="MenuItemRepository" vertex="1">
+          <mxGeometry height="60" width="120" x="720" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-216" edge="1" parent="1" source="OndfssaP5NTw4JpoyqYr-200" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="OndfssaP5NTw4JpoyqYr-211" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="640" y="680" as="sourcePoint" />
+            <mxPoint x="690" y="630" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-217" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" value="MySQL" vertex="1">
+          <mxGeometry height="80" width="60" x="535" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-218" edge="1" parent="1" source="OndfssaP5NTw4JpoyqYr-209" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="OndfssaP5NTw4JpoyqYr-217" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="720" y="860" as="sourcePoint" />
+            <mxPoint x="720" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-219" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="MapAPI" vertex="1">
+          <mxGeometry height="60" width="120" x="740" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="OndfssaP5NTw4JpoyqYr-224" edge="1" parent="1" source="OndfssaP5NTw4JpoyqYr-200" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=classic;html=1;curved=0;rounded=0;endSize=8;startSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="OndfssaP5NTw4JpoyqYr-219" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="830" />
+            </Array>
+            <mxPoint x="710" y="790" as="sourcePoint" />
+            <mxPoint x="760" y="740" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
