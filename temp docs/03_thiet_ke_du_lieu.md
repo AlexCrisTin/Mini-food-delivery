@@ -2,7 +2,7 @@
 
 ## 3.1. Mô hình Thực thể - Quan hệ (ERD)
 
-Hệ thống quản lý 14 thực thể JPA, được ánh xạ vào MySQL 8.0. Điểm nhấn là việc sử dụng **Snapshot Pattern** cho chi tiết đơn hàng và **Optimistic Locking** cho các giao dịch quan trọng.
+Hệ thống quản lý 15 thực thể JPA, được ánh xạ vào MySQL 8.0. Điểm nhấn là việc sử dụng **Snapshot Pattern** cho chi tiết đơn hàng và **Optimistic Locking** cho các giao dịch quan trọng.
 
 ```mermaid
 erDiagram
@@ -13,6 +13,7 @@ erDiagram
     USER ||--o{ OWNER_REQUEST : "submits"
     USER ||--o{ SHIPPER_REQUEST : "submits"
     USER ||--o| SHIPPER_LOCATION : "tracks"
+    USER ||--o| REFRESH_TOKEN : "has"
 
     RESTAURANT ||--o{ MENU_CATEGORY : "has"
     RESTAURANT ||--o{ MENU_ITEM : "offers"
@@ -26,7 +27,8 @@ erDiagram
 ## 3.2. Danh sách thực thể trọng tâm
 
 ### 3.2.1. User & Security
-- **User**: Lưu trữ thông tin định danh, Role (CUSTOMER, OWNER, SHIPPER, ADMIN), trạng thái hoạt động và cờ xóa mềm (is_deleted).
+- **User**: Lưu trữ thông tin định danh, Role (CUSTOMER, OWNER, SHIPPER, ADMIN), trạng thái hoạt động, cờ xóa mềm (is_deleted), số lần đăng nhập sai (`failed_login_attempts`) và thời gian khóa tài khoản (`account_locked_until`).
+- **RefreshToken**: Thực thể lưu trữ refresh token cho cơ chế duy trì phiên đăng nhập không trạng thái (stateless session persistence).
 - **OwnerRequest / ShipperRequest**: Quản lý quy trình nâng cấp vai trò người dùng thông qua phê duyệt của Admin.
 
 ### 3.2.2. Nhà hàng & Thực đơn
@@ -55,3 +57,4 @@ erDiagram
 - **V6**: Cho phép `shipper_id` null trong `delivery_assignments` để hỗ trợ luồng tự động.
 - **V7-V8**: Thêm ShipperRequest và mở rộng kích thước `image_url` lên LONGTEXT.
 - **V9**: Bổ sung cột `version` cho tất cả các bảng cần Optimistic Locking.
+- **V10**: Thêm các cột khóa tài khoản (`failed_login_attempts`, `account_locked_until`) vào bảng `users` và tạo bảng `refresh_tokens`.

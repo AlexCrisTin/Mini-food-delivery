@@ -27,7 +27,7 @@ com.example.server/
 ├── config/          (5 classes)    ← SecurityConfig, WebSocket, OpenAPI, CORS, RestClient
 ├── controller/      (13 classes)   ← 12 REST + 1 WebSocket controller
 ├── dto/             (11 packages)  ← Request/Response DTOs, organized by domain
-├── entity/          (14 classes)   ← JPA entities (includes ShipperRequest)
+├── entity/          (15 classes)   ← JPA entities (includes ShipperRequest, RefreshToken)
 ├── enums/           (6 enums)      ← Role, OrderStatus, DeliveryAssignmentStatus, etc.
 ├── event/           (1 class)      ← OrderReadyEvent
 ├── exception/       (3 classes)    ← AppException, ResourceNotFound, GlobalHandler

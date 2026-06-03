@@ -83,6 +83,16 @@ Token Expiration:     ${app.jwt.expiration-ms} = 86,400,000ms (24 giờ)
 | `UnsupportedJwtException` | Algorithm không hỗ trợ | 🔴 Error |
 | `IllegalArgumentException` | Claims string rỗng | 🔴 Error |
 
+### 2.2.4. Cơ chế làm mới Token (Refresh Token)
+Hệ thống sử dụng bảng `refresh_tokens` để quản lý phiên đăng nhập không trạng thái (stateless session persistence):
+- **Thời hạn hoạt động:** Xác định bởi `${app.jwt.refresh-expiration-ms}`, mặc định là **7 ngày** (604,800,000 ms).
+- **Nguyên lý hoạt động:**
+  1. Khi đăng nhập thành công, server sinh ra một `refreshToken` ngẫu nhiên (UUID v4) bên cạnh `accessToken`.
+  2. Khi `accessToken` hết hạn, client gửi `refreshToken` lên `/api/auth/refresh`.
+  3. Server xác thực refresh token: nếu hợp lệ và chưa hết hạn, sinh ra một `accessToken` mới với claims tương tự.
+  4. Nếu refresh token hết hạn hoặc không hợp lệ, hệ thống tự động xóa token khỏi cơ sở dữ liệu và trả về lỗi tương ứng (`EXPIRED_REFRESH_TOKEN` hoặc `INVALID_REFRESH_TOKEN`).
+- **Giới hạn số lượng:** Mỗi người dùng chỉ có tối đa **1 refresh token** hoạt động tại một thời điểm. Khi tạo mới, token cũ bị xóa khỏi DB.
+
 ---
 
 ## 2.3. JwtAuthFilter — Request Interceptor
@@ -279,6 +289,9 @@ Mọi response (success hoặc error) đều tuân theo cấu trúc `ApiResponse
 | Code | HTTP | Trigger | Mô tả |
 |:-----|:----:|:--------|:-------|
 | `AUTH_FAILED` | 401 | Login thất bại | Email/password không đúng |
+| `ACCOUNT_LOCKED` | 401 | Login thất bại | Tài khoản bị khóa tạm thời do nhập sai mật khẩu quá nhiều lần |
+| `INVALID_REFRESH_TOKEN` | 403 | Refresh token | Refresh token không hợp lệ |
+| `EXPIRED_REFRESH_TOKEN` | 403 | Refresh token | Refresh token đã hết hạn |
 | `EMAIL_EXISTS` | 400 | Register | Email đã được sử dụng |
 | `VALIDATION_ERROR` | 400 | Jakarta Validation | DTO không hợp lệ |
 | `RESOURCE_NOT_FOUND` | 404 | Repository lookup | Entity không tồn tại |
@@ -309,4 +322,16 @@ Hai entity sử dụng `@Version` để phòng chống **concurrent modification
 | `Order` | `@Version Integer version` | Nhiều actor (Customer cancel, Owner update, Shipper deliver) có thể update cùng lúc |
 | `DeliveryAssignment` | `@Version Integer version` | Nhiều shipper có thể cố gán mình vào cùng 1 đơn |
 
-Khi xảy ra conflict → `ObjectOptimisticLockingFailureException` → `409 CONCURRENCY_FAILURE` → Client retry.
+Khi xảy ra conflict → `ObjectOptimisticLockingFailureException` -> `409 CONCURRENCY_FAILURE` -> Client retry.
+
+---
+
+## 2.9. Cơ chế Khóa tài khoản (Account Lockout)
+Để chống lại các cuộc tấn công dò mật khẩu (Brute Force), hệ thống triển khai cơ chế khóa tài khoản tự động:
+- **Ngưỡng khóa mật khẩu (`MAX_FAILED_ATTEMPTS`):** 5 lần.
+- **Thời hạn khóa (`LOCK_TIME_DURATION_MINUTES`):** 15 phút.
+- **Nguyên lý hoạt động:**
+  1. Khi người dùng nhập sai mật khẩu, số lần thử sai `failed_login_attempts` trong User tăng thêm 1.
+  2. Nếu số lần thử sai vượt quá hoặc bằng **5**, trường `account_locked_until` sẽ được set bằng thời gian hiện tại cộng 15 phút, tài khoản bị khóa và trả về lỗi `ACCOUNT_LOCKED`.
+  3. Khi đăng nhập thành công, số lần thử sai `failed_login_attempts` được đặt lại về `0` và `account_locked_until` được xóa về `null`.
+  4. Nếu thời hạn khóa đã trôi qua, server sẽ tự động reset trạng thái khóa khi người dùng thực hiện yêu cầu đăng nhập tiếp theo.

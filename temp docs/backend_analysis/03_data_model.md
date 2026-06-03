@@ -15,6 +15,7 @@ erDiagram
     USER ||--o{ OWNER_REQUEST : "submits"
     USER ||--o{ SHIPPER_REQUEST : "submits"
     USER ||--o| SHIPPER_LOCATION : "tracked_at"
+    USER ||--o| REFRESH_TOKEN : "has token"
 
     RESTAURANT_CATEGORY ||--o{ RESTAURANT : "categorizes"
     RESTAURANT ||--o{ MENU_CATEGORY : "has categories"
@@ -39,8 +40,17 @@ erDiagram
         varchar role
         boolean is_active
         boolean is_deleted
+        int failed_login_attempts
+        timestamp account_locked_until
         timestamp created_at
         timestamp updated_at
+    }
+
+    REFRESH_TOKEN {
+        bigint id PK
+        bigint user_id FK
+        varchar token UK
+        timestamp expiry_date
     }
 
     RESTAURANT {
@@ -146,7 +156,7 @@ erDiagram
 
 ---
 
-## 3.2. Chi tiết 14 JPA Entities
+## 3.2. Chi tiết 15 JPA Entities
 
 ### 3.2.1. `User` — Trung tâm hệ thống
 
@@ -165,6 +175,8 @@ erDiagram
 | `role` | VARCHAR(50) | NOT NULL, DEFAULT 'USER' | `ROLE_CUSTOMER` / `ROLE_OWNER` / `ROLE_SHIPPER` / `ROLE_ADMIN` |
 | `is_active` | BOOLEAN | DEFAULT TRUE | Admin có thể vô hiệu hóa |
 | `is_deleted` | BOOLEAN | DEFAULT FALSE | Soft delete |
+| `failed_login_attempts` | INT | NOT NULL, DEFAULT 0 | Số lần đăng nhập sai liên tiếp |
+| `account_locked_until` | TIMESTAMP | NULL | Thời điểm tài khoản được mở khóa |
 | `created_at` | TIMESTAMP | NOT NULL | `@PrePersist` |
 | `updated_at` | TIMESTAMP | NOT NULL | `@PreUpdate` |
 
@@ -178,6 +190,7 @@ User ──┬── 1:N → Address          (addresses)
        ├── 1:N → OrderStatusHistory (orderStatusHistories, as changedBy)
        ├── 1:N → Notification      (notifications)
        ├── 1:N → OwnerRequest      (ownerRequests)
+       ├── 1:1 → RefreshToken      (refreshToken)
        └── 1:1 → ShipperLocation   (shipperLocation)
 ```
 
@@ -247,6 +260,17 @@ graph LR
 ```
 
 > **Tại sao lưu snapshot?** Nếu nhà hàng thay đổi giá hoặc tên món sau khi đơn được đặt, dữ liệu lịch sử vẫn chính xác. `menu_item_id` chỉ dùng để tham chiếu ngược, không phải nguồn sự thật cho giá/tên.
+
+### 3.2.6. `RefreshToken` — Duy trì phiên đăng nhập
+
+[RefreshToken.java](file:///c:/Users/bachp/Downloads/Mini-Food-Delivery/SRC/backend/src/main/java/com/example/server/entity/RefreshToken.java)
+
+*   **Mục đích:** Lưu trữ UUID Refresh Token nhằm phục vụ việc tự động cấp phát access token mới mà không bắt người dùng phải nhập lại thông tin đăng nhập.
+*   **Thuộc tính:**
+    *   `id`: BIGINT (PK, Auto-increment)
+    *   `user`: Liên kết `@OneToOne` tới thực thể `User`.
+    *   `token`: VARCHAR(500) (NOT NULL, UNIQUE) - Mã token ngẫu nhiên.
+    *   `expiryDate`: LocalDateTime (NOT NULL) - Thời điểm hết hạn của refresh token.
 
 ---
 
@@ -340,6 +364,8 @@ stateDiagram-v2
 | **V6** | `V6__nullable_shipper_in_delivery.sql` | `delivery_assignments.shipper_id` → NULLABLE (cho phép UNASSIGNED state) |
 | **V7** | `V7__create_shipper_requests_table.sql` | Tạo bảng `shipper_requests` cho workflow đăng ký shipper |
 | **V8** | `V8__restaurant_image_url_longtext.sql` | `restaurants.image_url` VARCHAR → LONGTEXT (hỗ trợ base64) |
+| **V9** | `V9__add_version_column.sql` | Bổ sung cột `version` cho các bảng cần Optimistic Locking (`orders`, `delivery_assignments`) |
+| **V10** | `V10__add_account_lockout_and_refresh_tokens.sql` | Thêm các cột bảo mật khóa tài khoản vào bảng `users` và tạo bảng `refresh_tokens` |
 
 ---
 

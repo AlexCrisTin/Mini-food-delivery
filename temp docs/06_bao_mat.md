@@ -5,12 +5,14 @@ Hệ thống loại bỏ hoàn toàn HTTP Session truyền thống, thay vào đ
 
 ## 6.2. Quy trình Xác thực & Ủy quyền (JWT Flow)
 
-1. **Đăng nhập**: `AuthService` xác thực thông tin và sinh JWT. 
+1. **Đăng nhập**: `AuthService` xác thực thông tin và sinh JWT kèm Refresh Token.
    - *Claims*: JWT chứa `id`, `role`, `fullName` và `sub` (email).
-2. **Filter Interception**: `JwtAuthFilter` chặn mọi request (trừ public endpoints).
+   - *Lockout*: Nếu đăng nhập sai quá 5 lần liên tiếp, tài khoản tự động bị khóa trong 15 phút (`ACCOUNT_LOCKED`).
+2. **Làm mới Token**: Endpoint `/api/auth/refresh` cho phép sử dụng Refresh Token để lấy Access Token mới mà không cần đăng nhập lại.
+3. **Filter Interception**: `JwtAuthFilter` chặn mọi request (trừ public endpoints).
    - *No-DB Validation*: Filter trích xuất thông tin user trực tiếp từ Claims của token. 
    - *Context Mapping*: Chuyển đổi Claims thành `CustomUserDetails` và nạp vào `SecurityContext`.
-3. **RBAC Enforcement**: `SecurityConfig` và `@PreAuthorize` kiểm tra quyền truy cập dựa trên Role trong Context.
+4. **RBAC Enforcement**: `SecurityConfig` và `@PreAuthorize` kiểm tra quyền truy cập dựa trên Role trong Context.
 
 ## 6.3. Bảo mật Dữ liệu & IDOR Protection
 Hệ thống triển khai các biện pháp chống lại các lỗ hổng phổ biến:
@@ -31,6 +33,8 @@ Mọi lỗi liên quan đến bảo mật được ánh xạ về chuẩn JSON:
 
 ## 6.6. Error Codes nghiệp vụ (Trích dẫn)
 - `AUTH_FAILED`: Sai email/mật khẩu.
+- `ACCOUNT_LOCKED`: Tài khoản bị khóa tạm thời do nhập sai quá nhiều lần.
+- `INVALID_REFRESH_TOKEN` / `EXPIRED_REFRESH_TOKEN`: Refresh token không hợp lệ hoặc đã hết hạn.
 - `FORBIDDEN`: Không có quyền truy cập tài nguyên.
 - `CONCURRENCY_FAILURE`: Xung đột phiên bản dữ liệu (@Version).
 - `UNAUTHORIZED_ACCESS`: Vi phạm Ownership (IDOR).

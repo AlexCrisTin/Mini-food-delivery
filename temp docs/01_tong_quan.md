@@ -18,7 +18,7 @@
 - **Ngôn ngữ:** Java 17
 - **Bảo mật:** Spring Security 6.4 (Stateless RBAC)
 - **Xác thực:** JWT (JJWT 0.13.0) với Claims-based authentication
-- **Cơ sở dữ liệu:** MySQL 8.0 + Flyway Migration (V1 -> V9)
+- **Cơ sở dữ liệu:** MySQL 8.0 + Flyway Migration (V1 -> V10)
 - **ORM:** Spring Data JPA (Hibernate) với Optimistic Locking (@Version)
 - **Ánh xạ đối tượng:** MapStruct 1.6.3 + Lombok
 - **Tài liệu API:** SpringDoc OpenAPI 2.8.5
@@ -43,7 +43,7 @@
 - **`config/`** — Cấu hình Security, WebSocket, OpenAPI, MapClient.
 - **`controller/`** — 13 REST Controllers + 1 WebSocket Controller.
 - **`dto/`** — 40+ DTOs tổ chức theo domain (auth, order, delivery, etc.).
-- **`entity/`** — 14 JPA Entities (bao gồm OwnerRequest và ShipperRequest).
+- **`entity/`** — 15 JPA Entities (bao gồm OwnerRequest, ShipperRequest và RefreshToken).
 - **`service/`** — 12 Service Interfaces + 12 Implementations (Logic nghiệp vụ tập trung).
 - **`security/`** — Logic JWT stateless, CustomUserDetails, Auth filters.
 

@@ -78,6 +78,7 @@ graph TD
 |:------:|:-----|:------------|:---------|:----:|
 | `POST` | `/login` | `LoginRequest` { email, password } | `JwtResponse` | 🌐 Public |
 | `POST` | `/register` | `RegisterRequest` { email✱, password✱, fullName✱, phone, avatarUrl } | `JwtResponse` | 🌐 Public |
+| `POST` | `/refresh` | `TokenRefreshRequest` { refreshToken✱ } | `TokenRefreshResponse` | 🌐 Public |
 
 > ✱ = Jakarta Validation: `@NotBlank`, `@Email`, `@Size(min=6)`, `@Pattern(10-15 digits)`
 
