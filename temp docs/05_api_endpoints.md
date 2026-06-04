@@ -17,8 +17,9 @@
 ## 5.2. Danh mục Endpoints chính
 
 ### 5.2.1. Authentication (`/api/auth`)
-- `POST /login`: Đăng nhập và nhận JWT (Claims: id, role, fullName).
+- `POST /login`: Đăng nhập và nhận JWT + Refresh Token (Claims: id, role, fullName).
 - `POST /register`: Đăng ký tài khoản CUSTOMER mới.
+- `POST /refresh`: Làm mới Access Token bằng Refresh Token.
 
 ### 5.2.2. Nhà hàng & Menu (`/api/restaurants`)
 - `POST /search`: Tìm kiếm nhà hàng với filter category và từ khóa (Phân trang).

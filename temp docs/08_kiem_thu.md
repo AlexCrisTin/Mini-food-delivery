@@ -10,7 +10,7 @@ Dự án áp dụng mô hình kiểm thử kim tự tháp để đảm bảo đ�
 
 ### 8.3. Kiểm thử Tích hợp (Integration Testing)
 - **Testcontainers**: Khởi động một container MySQL 8.0 thực thụ trong quá trình chạy test để kiểm thử tầng Repository và các câu lệnh Native SQL phức tạp (Haversine formula).
-- **Flyway Integration**: Đảm bảo tất cả migration script (V1-V9) chạy thành công và tạo ra schema chính xác.
+- **Flyway Integration**: Đảm bảo tất cả migration script (V1-V10) chạy thành công và tạo ra schema chính xác.
 
 ### 8.4. Kiểm thử Chấp nhận (E2E Testing)
 - **Cypress**: Mô phỏng hành trình khách hàng từ lúc đăng nhập, chọn món cho đến khi đặt hàng thành công. Kiểm tra tính đúng đắn của giao diện trên các kích thước màn hình khác nhau.
@@ -22,7 +22,7 @@ Dự án áp dụng mô hình kiểm thử kim tự tháp để đảm bảo đ�
 ## 8.6. Quy trình Triển khai (Deployment)
 
 ### 8.6.1. Yêu cầu Hệ thống
-- **Runtime**: Java 17+, Node.js 18+.
+- **Runtime**: Java 17+, Node.js 20+.
 - **Database**: MySQL 8.0+.
 - **Environment**: File `.env` chứa các bí mật (Secrets) như DB password và JWT secret.
 

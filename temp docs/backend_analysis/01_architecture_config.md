@@ -269,7 +269,7 @@ Global CORS configuration cho MVC layer (bổ sung cho SecurityConfig CORS):
 
 ## 1.5. Flyway Database Migrations
 
-Hệ thống sử dụng **8 migration files** để quản lý schema:
+Hệ thống sử dụng **10 migration files** để quản lý schema:
 
 ```mermaid
 timeline
@@ -297,7 +297,14 @@ timeline
     V8 : Image LONGTEXT
        : restaurant.image_url → LONGTEXT
        : Hỗ trợ base64 encoded images
+    V9 : Optimistic Locking
+       : Thêm version column vào orders
+       : và delivery_assignments
+    V10 : Security Hardening
+        : Thêm failed_login_attempts và
+        : account_locked_until vào users;
+        : Tạo bảng refresh_tokens
 ```
 
 > [!NOTE]
-> Migration V6 là bước quan trọng cho Event-Driven Architecture: cho phép tạo `DeliveryAssignment` với `shipper_id = NULL` khi đơn hàng ở trạng thái `READY` nhưng chưa có shipper nhận.
+> Migration V6 là bước quan trọng cho Event-Driven Architecture: cho phép tạo `DeliveryAssignment` với `shipper_id = NULL` khi đơn hàng ở trạng thái `READY` nhưng chưa có shipper nhận. Mới nhất, migration V10 bổ sung thêm các trường bảo mật phục vụ đăng nhập chống brute force (lockout) và duy trì phiên đăng nhập (refresh token).

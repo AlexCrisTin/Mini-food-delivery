@@ -18,7 +18,7 @@ Hệ thống sử dụng mô hình **Interface + Implementation** cho tất cả
 - **MenuService**: Quản lý cấu trúc thực đơn phức tạp. Đảm bảo tính toàn vẹn dữ liệu khi di chuyển MenuItem giữa các Category.
 
 ### 4.2.3. Hạ tầng & Tiện ích
-- **AuthService**: Xử lý đăng ký/đăng nhập và cấp phát JWT. Toàn bộ thông tin định danh được đóng gói vào Claims để phục vụ kiến trúc stateless.
+- **AuthService**: Xử lý đăng ký/đăng nhập, cấp phát JWT, lưu vết số lần đăng nhập sai để khóa tài khoản tạm thời (`failed_login_attempts`, `account_locked_until`), và quản lý cấp phát/thu hồi refresh token. Toàn bộ thông tin định danh được đóng gói vào Claims để phục vụ kiến trúc stateless.
 - **MapService**: Cổng giao tiếp với external APIs (Nominatim, OSRM) để geocoding và tính toán đường đi.
 - **NotificationService**: Hệ thống thông báo nội bộ hỗ trợ WebSockets (SSE/STOMP) để cập nhật tức thời cho người dùng.
 
