@@ -345,6 +345,37 @@ CREATE TABLE notifications (
 
     CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+-- ------------------------------------------------------------
+-- 15. reviews
+--   Lưu đánh giá của khách hàng sau khi đơn hàng hoàn thành
+--   Mỗi đơn hàng chỉ có tối đa một đánh giá
+-- ------------------------------------------------------------
+CREATE TABLE reviews (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id            BIGINT       NOT NULL UNIQUE,
+    user_id             BIGINT       NOT NULL,
+    restaurant_id        BIGINT       NOT NULL,
+    shipper_id           BIGINT,
 
+    restaurant_rating    INT          NOT NULL,
+    shipper_rating       INT,
+    comment              VARCHAR(1000),
+
+    created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_reviews_order      FOREIGN KEY (order_id)     REFERENCES orders(id)      ON DELETE CASCADE,
+    CONSTRAINT fk_reviews_user       FOREIGN KEY (user_id)      REFERENCES users(id),
+    CONSTRAINT fk_reviews_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id),
+    CONSTRAINT fk_reviews_shipper    FOREIGN KEY (shipper_id)   REFERENCES users(id)       ON DELETE SET NULL,
+
+    CONSTRAINT chk_reviews_restaurant_rating CHECK (restaurant_rating BETWEEN 1 AND 5),
+    CONSTRAINT chk_reviews_shipper_rating    CHECK (shipper_rating IS NULL OR shipper_rating BETWEEN 1 AND 5)
+) ENGINE=InnoDB;
+
+CREATE INDEX idx_reviews_user       ON reviews(user_id);
+CREATE INDEX idx_reviews_restaurant ON reviews(restaurant_id);
+CREATE INDEX idx_reviews_shipper    ON reviews(shipper_id);
+CREATE INDEX idx_reviews_created_at ON reviews(created_at);
 CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_time ON notifications(created_at);
